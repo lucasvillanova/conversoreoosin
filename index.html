@@ -111,6 +111,7 @@ input[type=file]{display:none}
 .stage-bar h2{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--vinho)}
 .zoom{display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--texto-suave)}
 .zoom button{width:26px;height:26px;border-radius:7px;border:1px solid var(--linha);background:#fff;cursor:pointer;font-size:14px;line-height:1;color:var(--vinho)}
+.zoom #zFit{width:auto;height:26px;padding:0 10px;font-size:11.5px;font-weight:600;letter-spacing:.2px}
 #viewport{overflow:auto;background:#EDE7E4;border-radius:10px;padding:14px 0}
 #scaler{margin:0 auto;overflow:hidden}
 #scaler > .doc{transform-origin:top left}
@@ -124,7 +125,7 @@ input[type=file]{display:none}
   .stage{padding:14px 12px}
   #viewport{padding:10px 0}
   .zoom button{width:40px;height:40px;font-size:18px}
-  .zoom #zFit{width:auto;padding:0 12px;font-size:12px;font-weight:600}
+  .zoom #zFit{height:40px;padding:0 14px;font-size:12.5px}
   .zoom{gap:8px}
   .stage-bar{flex-wrap:wrap;gap:10px}
   .stage-bar h2{width:100%}
@@ -140,12 +141,29 @@ input[type=file]{display:none}
 @media print{ .barra-mobile{display:none!important} }
 
 /* ====================== DOCUMENTO A4 ====================== */
+/* .doc = a folha A4; .doc-inner = o conteúdo, que pode ser reduzido para caber */
 .doc{
-  width:210mm;min-height:292mm;background:#fff;margin:0 auto;
-  padding:7mm 9mm 0;font-size:7.4pt;line-height:1.35;color:var(--texto);
-  box-shadow:0 6px 22px rgba(78,10,9,.13);display:flex;flex-direction:column;
+  width:210mm;height:292mm;background:#fff;margin:0 auto;overflow:hidden;
+  box-shadow:0 6px 22px rgba(78,10,9,.13);
+}
+.doc-inner{
+  width:210mm;min-height:292mm;padding:7mm 9mm 0;
+  font-size:7.4pt;line-height:1.35;color:var(--texto);
+  display:flex;flex-direction:column;transform-origin:top left;
 }
 .doc .grow{flex:1 0 auto}
+/* modo multipágina: a folha cresce e o conteúdo flui normalmente */
+.doc.multi{height:auto;min-height:292mm;overflow:visible}
+.doc.multi .doc-inner{min-height:0;display:block}
+.doc.multi .grow{display:none}
+/* nenhum destes blocos pode ser fatiado por uma quebra de página */
+.doc.multi .bottom,.doc.multi .pay,.doc.multi .tot,.doc.multi .obs,
+.doc.multi .foot,.doc.multi .box,.doc.multi .resumo,.doc.multi .sec-t,
+.doc.multi table.prod tr{break-inside:avoid;page-break-inside:avoid}
+/* no modo multipágina o rodapé da tabela não se repete: aparece só no fim */
+.doc.multi table.prod tfoot{display:table-row-group}
+.doc.multi .sec-t{break-after:avoid;page-break-after:avoid}
+.doc.multi .bottom{margin-top:4mm}
 
 /* --- cabeçalho --- */
 .dh{display:grid;grid-template-columns:48mm 1fr 44mm;gap:5mm;align-items:start;padding-bottom:2.6mm}
@@ -246,7 +264,8 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
   #printArea{display:block!important}
   #scaler{transform:none!important;width:auto!important;height:auto!important;overflow:visible!important}
   #scaler > .doc{transform:none!important}
-  .doc{box-shadow:none;margin:0;width:210mm;min-height:297mm}
+  .doc{box-shadow:none;margin:0;width:210mm}
+  .doc.multi{height:auto}
   table.prod{page-break-inside:auto}
   table.prod tr{page-break-inside:avoid}
   table.prod thead{display:table-header-group}
@@ -690,7 +709,7 @@ function render(D){
   const rc = (lab,val,cls='') => `<div class="rc ${cls}"><em>${lab}</em><b>${val!=null?BR(val):'—'}</b></div>`;
 
   const doc = `
-<div class="doc">
+<div class="doc"><div class="doc-inner">
 
   <!-- ======= CABEÇALHO ======= -->
   <div class="dh">
@@ -836,14 +855,50 @@ function render(D){
     <div>${IC.mail}<span><em>E-MAIL</em>${v(D.empresa.email)}</span></div>
     <div>${IC.insta}<span><em>INSTAGRAM</em>${INSTAGRAM}</span></div>
   </div>
-</div>`;
+</div></div>`;
   return doc;
+}
+
+
+/* ============================================================
+   4b. PAGINAÇÃO — 1 página sempre que possível, sem fatiar nada
+   ------------------------------------------------------------
+   1) tenta encaixar tudo em uma folha reduzindo a escala em passos
+      (o conteúdo é diagramado mais largo e depois reduzido, então
+       nada é cortado e as proporções ficam iguais);
+   2) se nem no menor passo couber, entra em modo multipágina, onde
+      nenhum bloco (totais, condições, observações, rodapé, linha da
+      tabela) pode ser dividido entre duas páginas.
+   ============================================================ */
+const PX_MM   = 96/25.4;
+const FOLHA_L = 210*PX_MM;          // largura útil da folha
+const FOLHA_A = 292*PX_MM;          // altura útil da folha
+const PASSOS  = [1,.97,.94,.91,.88,.85,.82,.79,.76];
+
+function paginar(doc){
+  const inner = doc.querySelector('.doc-inner');
+  doc.classList.remove('multi');
+  for(const k of PASSOS){
+    inner.style.transform = 'none';
+    inner.style.width     = (FOLHA_L/k)+'px';
+    inner.style.minHeight = '0px';
+    if(inner.scrollHeight <= FOLHA_A/k - 2){          // coube nesta escala
+      inner.style.minHeight = (FOLHA_A/k)+'px';
+      if(k!==1) inner.style.transform = `scale(${k})`;
+      return {paginas:1, escala:k};
+    }
+  }
+  // não coube: multipágina com quebras limpas
+  inner.style.transform=''; inner.style.width=''; inner.style.minHeight='';
+  doc.classList.add('multi');
+  const paginas = Math.max(2, Math.ceil(doc.scrollHeight/FOLHA_A));
+  return {paginas, escala:1};
 }
 
 /* ============================================================
    5. PAINEL — eventos, conferência e exportação
    ============================================================ */
-let DATA = null;
+let DATA = null, LAYOUT = {paginas:1, escala:1};
 const drop=$('#drop'), file=$('#file'), status=$('#status'), scaler=$('#scaler');
 
 /* dispositivo de toque em tela pequena — não afeta desktop/notebook */
@@ -870,10 +925,19 @@ async function handle(f){
     DATA = D;
     scaler.innerHTML = render(D);
     $('#empty')?.remove();
+    LAYOUT = paginar(scaler.firstElementChild);
     fit();
     $('#btnPdf').disabled = $('#btnPrint').disabled = $('#btnPdfMob').disabled = false;
 
     let out = msg('ok', `<b>${esc(f.name)}</b> convertido — ${D.itens.length} item(ns) lido(s).`);
+    if(LAYOUT.paginas===1 && LAYOUT.escala<1)
+      out += msg('warn', `Documento longo: reduzi o conteúdo para <b>${Math.round(LAYOUT.escala*100)}%</b> `+
+                         `e ele coube em <b>1 página</b> — nada foi cortado.`);
+    if(LAYOUT.paginas>1)
+      out += msg('warn', `Documento muito longo (${D.itens.length} itens): saiu em <b>${LAYOUT.paginas} páginas</b>, `+
+                         `com quebra limpa — totais, condições de pagamento, observações e rodapé nunca são `+
+                         `divididos ao meio. Para repetir o cabeçalho da tabela na página seguinte, use `+
+                         `<b>Imprimir / Salvar em PDF</b>.`);
     if(D._faltando.length)
       out += msg('warn', `<b>Dados ausentes no PDF de origem</b> (mantidos em branco, nada foi estimado):<br>${D._faltando.map(esc).join(' · ')}`);
     if(D._avisos.length)
@@ -898,7 +962,9 @@ function conferencia(D){
     <div class="kv"><span>Desconto</span><b style="color:var(--vinho-claro)">− R$ ${BR(R.desconto??D.somaDesconto)}</b></div>
     <div class="kv"><span>Produtos c/ desconto</span><b>R$ ${BR(R.produtos??D.somaFinal)}</b></div>
     <div class="kv"><span>IPI</span><b>R$ ${BR(R.ipi)}</b></div>
-    <div class="kv big"><span>Total final</span><b>R$ ${BR(R.fatura??D.totalFinal)}</b></div>`;
+    <div class="kv big"><span>Total final</span><b>R$ ${BR(R.fatura??D.totalFinal)}</b></div>
+    <div class="kv"><span>Documento</span><b>${LAYOUT.paginas} página${LAYOUT.paginas>1?'s':''}${
+        LAYOUT.escala<1?' · '+Math.round(LAYOUT.escala*100)+'%':''}</b></div>`;
   $('#confHint').innerHTML = D._avisos.length
     ? 'Os valores acima vieram do PDF do sistema. Há divergências sinalizadas acima.'
     : 'Todos os totais conferem com os do PDF do sistema (itens, resumo e total final).';
@@ -982,7 +1048,7 @@ $('#btnPdf').onclick = async ()=>{
   btn.disabled=true; btn.innerHTML='Gerando PDF…';
   // captura numa cópia ancorada no topo da página (evita deslocamento do html2canvas)
   const clone = scaler.firstElementChild.cloneNode(true);
-  clone.style.transform='none';                       // a cópia é capturada em 100%
+  clone.style.transform='none';   // remove só o zoom da tela; a escala de encaixe fica no .doc-inner
   const holder = document.createElement('div');
   holder.style.cssText='position:absolute;left:0;top:0;width:210mm;background:#fff';
   holder.appendChild(clone); document.body.appendChild(holder);
@@ -997,7 +1063,8 @@ $('#btnPdf').onclick = async ()=>{
                    width:clone.offsetWidth, height:clone.offsetHeight,
                    windowWidth:clone.offsetWidth, windowHeight:clone.offsetHeight},
       jsPDF:{unit:'mm', format:'a4', orientation:'portrait'},
-      pagebreak:{mode:['css','legacy']}
+      pagebreak:{mode:['css','legacy'],
+                 avoid:['tr','.bottom','.pay','.tot','.obs','.foot','.box','.resumo','.sec-t']}
     }).from(clone).save();
   }catch(e){ alert('Falha ao gerar o PDF: '+e.message+'\nUse o botão “Imprimir / Salvar em PDF”.'); }
   holder.remove(); window.scrollTo(sx,sy);
