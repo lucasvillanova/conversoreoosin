@@ -112,8 +112,32 @@ input[type=file]{display:none}
 .zoom{display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--texto-suave)}
 .zoom button{width:26px;height:26px;border-radius:7px;border:1px solid var(--linha);background:#fff;cursor:pointer;font-size:14px;line-height:1;color:var(--vinho)}
 #viewport{overflow:auto;background:#EDE7E4;border-radius:10px;padding:14px 0}
-#scaler{transform-origin:top center;margin:0 auto}
+#scaler{margin:0 auto;overflow:hidden}
+#scaler > .doc{transform-origin:top left}
 .empty{padding:70px 20px;text-align:center;color:var(--texto-suave);font-size:13px}
+
+
+/* ---------- ajustes exclusivos para toque em tela pequena ---------- */
+.barra-mobile{display:none}
+@media (max-width:980px) and (pointer:coarse){
+  .app{padding:16px 14px 96px}
+  .stage{padding:14px 12px}
+  #viewport{padding:10px 0}
+  .zoom button{width:40px;height:40px;font-size:18px}
+  .zoom #zFit{width:auto;padding:0 12px;font-size:12px;font-weight:600}
+  .zoom{gap:8px}
+  .stage-bar{flex-wrap:wrap;gap:10px}
+  .stage-bar h2{width:100%}
+  .drop{padding:30px 14px}
+  .btn{padding:14px}
+  .barra-mobile{
+    display:flex;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:50;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    background:rgba(255,255,255,.96);backdrop-filter:blur(8px);
+    border-top:1px solid var(--linha);box-shadow:0 -3px 14px rgba(78,10,9,.10)}
+  .barra-mobile .btn{margin:0}
+}
+@media print{ .barra-mobile{display:none!important} }
 
 /* ====================== DOCUMENTO A4 ====================== */
 .doc{
@@ -220,7 +244,8 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
   html,body{background:#fff}
   .app{display:none!important}
   #printArea{display:block!important}
-  #scaler{transform:none!important}
+  #scaler{transform:none!important;width:auto!important;height:auto!important;overflow:visible!important}
+  #scaler > .doc{transform:none!important}
   .doc{box-shadow:none;margin:0;width:210mm;min-height:297mm}
   table.prod{page-break-inside:auto}
   table.prod tr{page-break-inside:avoid}
@@ -292,12 +317,16 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
       <div class="stage-bar">
         <h2>Pré-visualização · A4</h2>
         <div class="zoom">
-          <button id="zOut">−</button><span id="zVal">—</span><button id="zIn">+</button>
+          <button id="zOut">−</button><span id="zVal">—</span><button id="zIn">+</button><button id="zFit" title="Ajustar à largura">Ajustar</button>
         </div>
       </div>
       <div id="viewport"><div class="empty" id="empty">Nenhum orçamento carregado. Envie o PDF do sistema para ver o modelo EOOSIN aqui.</div></div>
     </div>
   </div>
+</div>
+
+<div class="barra-mobile" id="barraMobile">
+  <button class="btn btn-primary" id="btnPdfMob" disabled>Baixar PDF</button>
 </div>
 
 <!-- documento gerado (única coisa que vai para o PDF) -->
@@ -817,6 +846,11 @@ function render(D){
 let DATA = null;
 const drop=$('#drop'), file=$('#file'), status=$('#status'), scaler=$('#scaler');
 
+/* dispositivo de toque em tela pequena — não afeta desktop/notebook */
+const TOQUE = window.matchMedia('(pointer:coarse)').matches && window.innerWidth<=980;
+const IOS   = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+
 drop.onclick = () => file.click();
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
 drop.ondragleave = () => drop.classList.remove('over');
@@ -837,7 +871,7 @@ async function handle(f){
     scaler.innerHTML = render(D);
     $('#empty')?.remove();
     fit();
-    $('#btnPdf').disabled = $('#btnPrint').disabled = false;
+    $('#btnPdf').disabled = $('#btnPrint').disabled = $('#btnPdfMob').disabled = false;
 
     let out = msg('ok', `<b>${esc(f.name)}</b> convertido — ${D.itens.length} item(ns) lido(s).`);
     if(D._faltando.length)
@@ -879,14 +913,24 @@ function fit(){
   apply();
 }
 function apply(){
-  scaler.style.transform = `scale(${zoom})`;
-  const h = scaler.firstElementChild ? scaler.firstElementChild.offsetHeight*zoom : 0;
-  scaler.style.height = h ? h+'px' : '';
+  const doc = scaler.firstElementChild;
+  if(doc){
+    doc.style.transform = `scale(${zoom})`;
+    // o contêiner assume o tamanho JÁ ESCALADO -> sem rolagem horizontal fantasma
+    scaler.style.width  = Math.ceil(doc.offsetWidth *zoom)+'px';
+    scaler.style.height = Math.ceil(doc.offsetHeight*zoom)+'px';
+  }
   $('#zVal').textContent = Math.round(zoom*100)+'%';
 }
 $('#zIn').onclick = ()=>{ zoom=Math.min(1.6,(zoom||1)+.1); apply(); };
 $('#zOut').onclick= ()=>{ zoom=Math.max(.25,(zoom||1)-.1); apply(); };
-window.addEventListener('resize',()=>{ zoom=null; if(DATA) fit(); });
+$('#zFit').onclick= ()=>{ zoom=null; fit(); };
+// no celular o resize dispara ao rolar (barra de endereço): só re-ajusta se a LARGURA mudar
+let larguraAnterior = window.innerWidth;
+window.addEventListener('resize',()=>{
+  if(window.innerWidth===larguraAnterior) return;
+  larguraAnterior = window.innerWidth; zoom=null; if(DATA) fit();
+});
 
 /* mover o documento para dentro do viewport da pré-visualização */
 $('#viewport').appendChild(scaler);
@@ -924,12 +968,21 @@ $('#btnPrint').onclick = ()=>{
   const z=zoom; zoom=1; apply(); window.print();
   setTimeout(()=>{ zoom=z; apply(); },600);
 };
+$('#btnPdfMob').onclick = ()=> $('#btnPdf').click();
+if(TOQUE && IOS){                       // Safari do iPhone não abre diálogo de impressão
+  const bp=$('#btnPrint'); bp.style.display='none';
+  bp.insertAdjacentHTML('afterend',
+    '<div class="msg msg-warn" style="margin-top:9px"><i class="dot"></i><div>'+
+    'No iPhone/iPad use <b>Baixar PDF</b> — o Safari não abre o diálogo de impressão.'+
+    '</div></div>');
+}
 $('#btnPdf').onclick = async ()=>{
   if(!DATA) return;
   const btn=$('#btnPdf'); const txt=btn.innerHTML;
   btn.disabled=true; btn.innerHTML='Gerando PDF…';
   // captura numa cópia ancorada no topo da página (evita deslocamento do html2canvas)
   const clone = scaler.firstElementChild.cloneNode(true);
+  clone.style.transform='none';                       // a cópia é capturada em 100%
   const holder = document.createElement('div');
   holder.style.cssText='position:absolute;left:0;top:0;width:210mm;background:#fff';
   holder.appendChild(clone); document.body.appendChild(holder);
@@ -939,7 +992,7 @@ $('#btnPdf').onclick = async ()=>{
     await html2pdf().set({
       margin:0, filename:nomeArquivo(DATA),
       image:{type:'jpeg',quality:0.98},
-      html2canvas:{scale:3, useCORS:true, backgroundColor:'#ffffff',
+      html2canvas:{scale:TOQUE?2:3, useCORS:true, backgroundColor:'#ffffff',
                    scrollX:0, scrollY:0, x:0, y:0,
                    width:clone.offsetWidth, height:clone.offsetHeight,
                    windowWidth:clone.offsetWidth, windowHeight:clone.offsetHeight},
