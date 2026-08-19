@@ -207,6 +207,7 @@ input[type=file]{display:none}
 
 /* --- cards do resumo --- */
 .resumo{display:grid;grid-template-columns:repeat(6,1fr) 1.35fr;gap:1.4mm}
+.resumo.sem-desc{grid-template-columns:repeat(4,1fr) 1.35fr}
 .rc{background:var(--bege);border:.35mm solid var(--linha);border-radius:1.6mm;padding:1.5mm 1.6mm;text-align:center}
 .rc em{display:block;font-style:normal;font-size:5.4pt;font-weight:600;letter-spacing:.3px;color:var(--texto-suave);line-height:1.25;min-height:5.6mm}
 .rc b{font-size:8.2pt;font-weight:700;color:var(--texto);white-space:nowrap}
@@ -565,12 +566,28 @@ function parseQuote(items){
       un : mid(c.qtd,c.un)  ?? B.un , pre: mid(c.un,c.pre)  ?? B.pre,
       dsc: mid(c.pre,c.dsc) ?? B.dsc, tot: mid(c.dsc,c.tot) ?? B.tot
     };
-    if(c.dsc==null){ D.semColunaDesconto=true; B.dsc=B.tot; }
+    if(c.dsc==null){                       // orçamento sem coluna de desconto
+      D.semColunaDesconto = true;
+      B.tot = mid(c.pre,c.tot) ?? B.tot;   // fronteira vai direto de Preço para Total
+      B.dsc = B.tot;
+    }
   }
   const lTotal = L.find(l=>/^TOTAL:/.test(l.text));
   const lFinal = L.find(l=>/TOTAL\s+FINAL:/i.test(l.text));
-  // o cabeçalho da tabela ocupa até 3 linhas ("Data de/entrega", "Desc./(%)")
-  const hdrBottom = hdr ? Math.max(...L.filter(l=>Math.abs(l.top-hdr.top)<=12).map(l=>l.top)) : null;
+  /* O cabeçalho da tabela pode ocupar até 3 linhas ("Data de"/"entrega", "Desc."/"(%)").
+     Identificamos essas linhas pelo TEXTO, não pela distância: em alguns orçamentos a
+     primeira linha de produto fica a apenas 10pt do cabeçalho e era engolida. */
+  const VOCAB = new Set(['#','codigo','descricao','data','de','entrega','qtde','un','un.',
+                         'preco','desc','desc.','(%)','(r$)','total','(valor','r$)']);
+  const ehCabecalho = l => l.items.every(i =>
+        i.s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+         .split(/\s+/).every(w => VOCAB.has(w)));
+  let hdrBottom = null;
+  if(hdr){
+    hdrBottom = hdr.top;
+    L.filter(l=>Math.abs(l.top-hdr.top)<=14 && ehCabecalho(l))
+     .forEach(l=>{ hdrBottom = Math.max(hdrBottom, l.top); });
+  }
   const pStart = Math.max(tPro!=null?tPro:0, hdrBottom!=null?hdrBottom+1:0);
   const pEnd   = lTotal ? lTotal.top-1 : (lFinal?lFinal.top-1:null);
   const rows   = between(L,pStart,pEnd);
@@ -690,6 +707,11 @@ const v = x => (x===null||x===undefined||x==='') ? '—' : esc(x);
 
 function render(D){
   const it = D.itens;
+  const R = D.resumo;
+  /* Só exibimos as colunas de valor cheio / desconto quando o orçamento REALMENTE tem
+     desconto. Sem desconto, o documento volta ao layout enxuto do modelo original. */
+  const temDesc = it.some(i=>(i.descPct||0)>0) || (R.desconto||0)>0;
+
   const linhas = it.map(i=>`
       <tr>
         <td class="c">${i.n}</td>
@@ -697,14 +719,13 @@ function render(D){
         <td class="desc">${v(i.descricao)}</td>
         <td class="c">${v(i.entrega)}</td>
         <td class="c">${i.qtde!=null?BR(i.qtde,0):'—'} ${esc(i.un||'')}</td>
-        <td class="r">${i.precoCheioUn!=null?BR(i.precoCheioUn,4):'—'}</td>
+        <td class="r">${i.precoCheioUn!=null?BR(i.precoCheioUn,4):'—'}</td>${temDesc?`
         <td class="r">${i.totalCheio!=null?BR(i.totalCheio):'—'}</td>
         <td class="c dsc">${i.descPct?BR(i.descPct,2)+'%':'—'}</td>
-        <td class="r dsc">${i.valorDesconto?'−'+BR(i.valorDesconto):'—'}</td>
+        <td class="r dsc">${i.valorDesconto?'−'+BR(i.valorDesconto):'—'}</td>`:''}
         <td class="r fin">${i.totalFinal!=null?BR(i.totalFinal):'—'}</td>
       </tr>`).join('');
 
-  const R = D.resumo;
   const cheio = (R.produtos!=null && R.desconto!=null) ? R.produtos+R.desconto : D.somaCheio;
   const rc = (lab,val,cls='') => `<div class="rc ${cls}"><em>${lab}</em><b>${val!=null?BR(val):'—'}</b></div>`;
 
@@ -777,10 +798,10 @@ function render(D){
   <!-- ======= RESUMO ======= -->
   <div class="sec">
     <div class="sec-t"><i class="ic">${IC.doc}</i><h3>RESUMO</h3><i class="rule"></i></div>
-    <div class="resumo">
-      ${rc('PRODUTOS<br>VALOR CHEIO (R$)', cheio)}
-      ${rc('DESCONTO<br>(R$)', R.desconto, 'neg')}
-      ${rc('PRODUTOS<br>COM DESCONTO (R$)', R.produtos)}
+    <div class="resumo${temDesc?'':' sem-desc'}">
+      ${temDesc?rc('PRODUTOS<br>VALOR CHEIO (R$)', cheio):''}
+      ${temDesc?rc('DESCONTO<br>(R$)', R.desconto, 'neg'):''}
+      ${rc(temDesc?'PRODUTOS<br>COM DESCONTO (R$)':'PRODUTOS<br>(VALOR R$)', R.produtos)}
       ${rc('ST<br>(R$)', R.st)}
       ${rc('IPI<br>(R$)', R.ipi)}
       ${rc('NF-e<br>(VALOR R$)', R.nfe)}
@@ -794,15 +815,18 @@ function render(D){
     <table class="prod">
       <colgroup>
         <col style="width:5mm"><col style="width:18mm"><col><col style="width:13mm">
-        <col style="width:12mm"><col style="width:19mm"><col style="width:20mm">
-        <col style="width:9mm"><col style="width:19mm"><col style="width:21mm">
+        <col style="width:12mm">${temDesc?`<col style="width:19mm"><col style="width:20mm">
+        <col style="width:9mm"><col style="width:19mm"><col style="width:21mm">`
+        :`<col style="width:24mm"><col style="width:26mm">`}
       </colgroup>
       <thead>
         <tr>
           <th class="c">#</th><th>CÓDIGO</th><th>DESCRIÇÃO</th><th class="c">DATA DE<br>ENTREGA</th>
-          <th class="c">QTDE UN.</th><th class="r">PREÇO UN.<br>CHEIO (R$)</th>
+          <th class="c">QTDE UN.</th>
+          <th class="r">PREÇO UN.<br>${temDesc?'CHEIO ':''}(R$)</th>${temDesc?`
           <th class="r">VALOR CHEIO<br>(R$)</th><th class="c">DESC.<br>(%)</th>
-          <th class="r">DESCONTO<br>(R$)</th><th class="r">VALOR FINAL<br>(R$)</th>
+          <th class="r">DESCONTO<br>(R$)</th>`:''}
+          <th class="r">${temDesc?'VALOR FINAL':'TOTAL'}<br>(R$)</th>
         </tr>
       </thead>
       <tbody>${linhas}</tbody>
@@ -810,10 +834,10 @@ function render(D){
         <tr>
           <td colspan="4" class="r">TOTAL:</td>
           <td class="c">${D.somaQtde?BR(D.somaQtde,0):'—'} ${esc(D.totUn||'')}</td>
-          <td></td>
+          <td></td>${temDesc?`
           <td class="r">${BR(D.somaCheio)}</td>
           <td></td>
-          <td class="r dsc">−${BR(D.somaDesconto)}</td>
+          <td class="r dsc">−${BR(D.somaDesconto)}</td>`:''}
           <td class="r">${BR(D.somaFinal)}</td>
         </tr>
       </tfoot>
@@ -827,9 +851,11 @@ function render(D){
       <div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div>
     </div>
     <div class="tot">
+      ${temDesc?`
       <div class="r"><span>SUBTOTAL PRODUTOS (VALOR CHEIO)</span><b>R$ ${BR(cheio)}</b></div>
       <div class="r neg"><span>(−) DESCONTO CONCEDIDO</span><b>− R$ ${BR(R.desconto ?? D.somaDesconto)}</b></div>
-      <div class="r sub"><span>SUBTOTAL COM DESCONTO</span><b>R$ ${BR(R.produtos ?? D.somaFinal)}</b></div>
+      <div class="r sub"><span>SUBTOTAL COM DESCONTO</span><b>R$ ${BR(R.produtos ?? D.somaFinal)}</b></div>`
+      :`<div class="r sub"><span>SUBTOTAL PRODUTOS</span><b>R$ ${BR(R.produtos ?? D.somaFinal)}</b></div>`}
       <div class="r"><span>ST</span><b>R$ ${BR(R.st)}</b></div>
       <div class="r"><span>IPI</span><b>R$ ${BR(R.ipi)}</b></div>
       <div class="r"><span>NF-e (VALOR R$)</span><b>R$ ${BR(R.nfe)}</b></div>
@@ -842,7 +868,7 @@ function render(D){
     ${IC.info}
     <div><b>OBSERVAÇÕES</b>
       ${D.transporte.modalidade?esc(D.transporte.modalidade)+'. ':''}Valores expressos em Reais (R$).
-      ${D.itens.some(i=>i.descPct) ? 'O valor final já contempla o desconto comercial informado por item.' : ''}
+      ${temDesc ? 'O valor final já contempla o desconto comercial informado por item.' : ''}
     </div>
   </div>
 
