@@ -118,6 +118,37 @@ input[type=file]{display:none}
 .empty{padding:70px 20px;text-align:center;color:var(--texto-suave);font-size:13px}
 
 
+
+/* ---------- abas ---------- */
+.abas{display:flex;gap:6px;margin-bottom:16px;background:#fff;border:1px solid var(--linha);
+      border-radius:12px;padding:5px;box-shadow:0 1px 3px rgba(78,10,9,.06)}
+.aba{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;
+     border:0;border-radius:8px;background:transparent;cursor:pointer;font-family:inherit;
+     font-size:12.5px;font-weight:600;color:var(--texto-suave);transition:.15s;letter-spacing:.1px}
+.aba svg{width:15px;height:15px}
+.aba:hover{background:var(--off);color:var(--vinho)}
+.aba.on{background:var(--vinho);color:#fff}
+.aba.on:hover{background:#661010;color:#fff}
+
+/* ---------- formulário de cliente ---------- */
+.form{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.campo{display:flex;flex-direction:column;gap:3px}
+.campo.wide{grid-column:1/-1}
+.campo label{font-size:10.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--texto-suave)}
+.campo input,.campo textarea{
+  width:100%;padding:8px 10px;border:1px solid var(--linha);border-radius:8px;
+  font-family:inherit;font-size:13px;color:var(--texto);background:var(--off);transition:.15s;resize:vertical}
+.campo input:focus,.campo textarea:focus{outline:0;border-color:var(--vinho);background:#fff;
+  box-shadow:0 0 0 3px rgba(78,10,9,.08)}
+.campo input::placeholder,.campo textarea::placeholder{color:#B9AAA8}
+.form-acoes{display:flex;gap:8px;margin-top:12px}
+.form-acoes .btn{margin:0}
+.form-acoes .btn-ghost{flex:0 0 96px}
+@media (max-width:980px) and (pointer:coarse){
+  .campo input,.campo textarea{font-size:16px;padding:11px 12px}  /* evita zoom automático no iOS */
+  .aba{padding:12px 10px}
+}
+
 /* ---------- ajustes exclusivos para toque em tela pequena ---------- */
 .barra-mobile{display:none}
 @media (max-width:980px) and (pointer:coarse){
@@ -284,9 +315,22 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
     </div>
   </div>
 
+  <div class="abas">
+    <button class="aba on" data-aba="com" id="abaCom">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
+      Orçamento com cliente
+    </button>
+    <button class="aba" data-aba="sem" id="abaSem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5M9 13h6M9 17h4"/></svg>
+      Orçamento sem cliente
+    </button>
+  </div>
+
   <div class="grid">
     <!-- ---------- coluna esquerda: controles ---------- -->
     <div>
+      <!-- ======= ABA 1: orçamento que já vem com o cliente correto ======= -->
+      <div id="painelCom">
       <div class="card">
         <h2><i class="n">1</i> Orçamento do sistema</h2>
         <div class="drop" id="drop">
@@ -297,15 +341,75 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
         <input type="file" id="file" accept="application/pdf">
         <div id="status"></div>
       </div>
+      </div>
+
+      <!-- ======= ABA 2: orçamento feito com "Cliente Padrão" ======= -->
+      <div id="painelSem" hidden>
+        <div class="card">
+          <h2><i class="n">1</i> Orçamento do sistema</h2>
+          <div class="drop" id="drop2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <b>Solte o PDF aqui ou clique</b>
+            <span>Orçamento gerado com o Cliente Padrão (.pdf)</span>
+          </div>
+          <input type="file" id="file2" accept="application/pdf">
+          <div id="status2"></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h2><i class="n">2</i> Dados do cliente</h2>
+          <div class="form">
+            <div class="campo wide">
+              <label for="fRazao">Razão Social / Nome</label>
+              <input id="fRazao" type="text" autocomplete="off" placeholder="Nome do cliente">
+            </div>
+            <div class="campo">
+              <label for="fFantasia">Nome Fantasia</label>
+              <input id="fFantasia" type="text" autocomplete="off" placeholder="—">
+            </div>
+            <div class="campo">
+              <label for="fDoc">CNPJ / CPF</label>
+              <input id="fDoc" type="text" autocomplete="off" placeholder="—">
+            </div>
+            <div class="campo">
+              <label for="fIE">Inscrição Estadual</label>
+              <input id="fIE" type="text" autocomplete="off" placeholder="—">
+            </div>
+            <div class="campo">
+              <label for="fFone">Telefone</label>
+              <input id="fFone" type="text" autocomplete="off" placeholder="—">
+            </div>
+            <div class="campo wide">
+              <label for="fEmail">E-mail</label>
+              <input id="fEmail" type="text" autocomplete="off" placeholder="—">
+            </div>
+            <div class="campo wide">
+              <label for="fEnd">Endereço</label>
+              <textarea id="fEnd" rows="2" autocomplete="off" placeholder="Rua, número, complemento - bairro - cidade - UF - CEP"></textarea>
+            </div>
+          </div>
+          <div class="form-acoes">
+            <button class="btn btn-primary" id="btnConverter" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 16"/><path d="M4 20v-4h4"/></svg>
+              Converter
+            </button>
+            <button class="btn btn-ghost" id="btnLimpar">Limpar</button>
+          </div>
+          <div class="hint">
+            Campos em branco saem como “—” no documento. Nenhum dado do cliente do PDF é
+            aproveitado nesta aba: vale exatamente o que for digitado aqui.
+          </div>
+        </div>
+      </div>
 
       <div class="card" style="margin-top:14px" id="resumoCard" hidden>
-        <h2><i class="n">2</i> Conferência</h2>
+        <h2><i class="n" id="nConf">2</i> Conferência</h2>
         <div id="conf"></div>
         <div class="hint" id="confHint"></div>
       </div>
 
       <div class="card" style="margin-top:14px">
-        <h2><i class="n">3</i> Gerar documento</h2>
+        <h2><i class="n" id="nGerar">3</i> Gerar documento</h2>
         <button class="btn btn-primary" id="btnPdf" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Baixar PDF
@@ -932,22 +1036,58 @@ const TOQUE = window.matchMedia('(pointer:coarse)').matches && window.innerWidth
 const IOS   = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
               (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
 
-drop.onclick = () => file.click();
-drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
-drop.ondragleave = () => drop.classList.remove('over');
-drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over');
-                     if(e.dataTransfer.files[0]) handle(e.dataTransfer.files[0]); };
-file.onchange = e => { if(e.target.files[0]) handle(e.target.files[0]); };
+const drop2=$('#drop2'), file2=$('#file2'), status2=$('#status2');
+let PENDENTE = null;                 // PDF lido na aba 2, aguardando os dados do cliente
+
+function ligarDrop(zona, campo, acao){
+  zona.onclick = () => campo.click();
+  zona.ondragover = e => { e.preventDefault(); zona.classList.add('over'); };
+  zona.ondragleave = () => zona.classList.remove('over');
+  zona.ondrop = e => { e.preventDefault(); zona.classList.remove('over');
+                       if(e.dataTransfer.files[0]) acao(e.dataTransfer.files[0]); };
+  campo.onchange = e => { if(e.target.files[0]) acao(e.target.files[0]); };
+}
+ligarDrop(drop,  file,  f=>handle(f));
+ligarDrop(drop2, file2, f=>handleSem(f));
 
 function msg(cls, html){ return `<div class="msg msg-${cls}"><i class="dot"></i><div>${html}</div></div>`; }
 
-async function handle(f){
-  if(!/\.pdf$/i.test(f.name)) { status.innerHTML = msg('err','Envie um arquivo <b>.pdf</b> exportado do sistema.'); return; }
-  status.innerHTML = msg('warn',`Lendo <b>${esc(f.name)}</b>…`);
+/* lê o PDF e devolve os dados — sem montar o documento */
+async function ler(f, alvo){
+  if(!/\.pdf$/i.test(f.name)){ alvo.innerHTML = msg('err','Envie um arquivo <b>.pdf</b> exportado do sistema.'); return null; }
+  alvo.innerHTML = msg('warn',`Lendo <b>${esc(f.name)}</b>…`);
   try{
-    const buf = await f.arrayBuffer();
-    const items = await readItems(new Uint8Array(buf));
-    const D = parseQuote(items);
+    const items = await readItems(new Uint8Array(await f.arrayBuffer()));
+    return parseQuote(items);
+  }catch(err){
+    console.error(err);
+    alvo.innerHTML = msg('err',`Não consegui ler o PDF: ${esc(err.message)}`);
+    return null;
+  }
+}
+
+/* ABA 1 — o orçamento já vem com o cliente correto: converte na hora */
+async function handle(f){
+  const D = await ler(f, status);
+  if(D) converter(D, status, f.name);
+}
+
+/* ABA 2 — orçamento feito com Cliente Padrão: só lê; converte após o formulário */
+async function handleSem(f){
+  const D = await ler(f, status2);
+  if(!D) return;
+  limparPreview();                 // um PDF novo invalida o documento anterior
+  PENDENTE = D; PENDENTE._arquivo = f.name;
+  $('#btnConverter').disabled = false;
+  status2.innerHTML = msg('ok', `<b>${esc(f.name)}</b> lido — ${D.itens.length} item(ns). `+
+                    `Preencha os dados do cliente e clique em <b>Converter</b>.`);
+  if(D._avisos.length)
+    status2.innerHTML += msg('err', `<b>Divergência nos números do sistema</b> — confira antes de enviar:<br>${D._avisos.map(esc).join('<br>')}`);
+}
+
+/* monta o documento e atualiza o painel (usado pelas duas abas) */
+function converter(D, alvo, nomeArq){
+  try{
     DATA = D;
     scaler.innerHTML = render(D);
     $('#empty')?.remove();
@@ -955,7 +1095,7 @@ async function handle(f){
     fit();
     $('#btnPdf').disabled = $('#btnPrint').disabled = $('#btnPdfMob').disabled = false;
 
-    let out = msg('ok', `<b>${esc(f.name)}</b> convertido — ${D.itens.length} item(ns) lido(s).`);
+    let out = msg('ok', `<b>${esc(nomeArq)}</b> convertido — ${D.itens.length} item(ns) lido(s).`);
     if(LAYOUT.paginas===1 && LAYOUT.escala<1)
       out += msg('warn', `Documento longo: reduzi o conteúdo para <b>${Math.round(LAYOUT.escala*100)}%</b> `+
                          `e ele coube em <b>1 página</b> — nada foi cortado.`);
@@ -966,15 +1106,68 @@ async function handle(f){
                          `<b>Imprimir / Salvar em PDF</b>.`);
     if(D._faltando.length)
       out += msg('warn', `<b>Dados ausentes no PDF de origem</b> (mantidos em branco, nada foi estimado):<br>${D._faltando.map(esc).join(' · ')}`);
+    if(D._clienteBranco && D._clienteBranco.length)
+      out += msg('warn', `<b>Campos do cliente em branco</b> (sairão como “—” no documento):<br>${D._clienteBranco.map(esc).join(' · ')}`);
     if(D._avisos.length)
       out += msg('err', `<b>Divergência nos números do sistema</b> — confira antes de enviar:<br>${D._avisos.map(esc).join('<br>')}`);
-    status.innerHTML = out;
+    alvo.innerHTML = out;
     conferencia(D);
   }catch(err){
     console.error(err);
-    status.innerHTML = msg('err',`Não consegui ler o PDF: ${esc(err.message)}`);
+    alvo.innerHTML = msg('err',`Não consegui montar o documento: ${esc(err.message)}`);
   }
 }
+
+/* ---------- aba 2: aplicar os dados digitados e converter ---------- */
+const CAMPOS = {razao:'#fRazao', fantasia:'#fFantasia', ie:'#fIE', email:'#fEmail',
+                doc:'#fDoc', fone:'#fFone', endereco:'#fEnd'};
+const ROTULOS = {razao:'Razão Social', fantasia:'Nome Fantasia', ie:'Inscrição Estadual',
+                 email:'E-mail', doc:'CNPJ/CPF', fone:'Telefone', endereco:'Endereço'};
+
+$('#btnConverter').onclick = ()=>{
+  if(!PENDENTE) return;
+  const D = PENDENTE;
+  const txt = sel => { const t=$(sel).value.replace(/\s+/g,' ').trim(); return t===''?null:t; };
+  D.cliente = {};
+  Object.keys(CAMPOS).forEach(k=>{ D.cliente[k] = txt(CAMPOS[k]); });
+  if(D.cliente.endereco) D.cliente.endereco = cep(D.cliente.endereco);
+  D.clienteManual = true;
+  // o bloco de cliente do PDF é descartado nesta aba: só vale o que foi digitado
+  D._faltando = D._faltando.filter(x=>!/cliente/i.test(x));
+  D._clienteBranco = Object.keys(CAMPOS).filter(k=>!D.cliente[k]).map(k=>ROTULOS[k]);
+  converter(D, status2, D._arquivo);
+};
+$('#btnLimpar').onclick = ()=>{
+  Object.values(CAMPOS).forEach(sel=>{ $(sel).value=''; });
+  $('#fRazao').focus();
+};
+
+/* ---------- abas ---------- */
+function limparPreview(){
+  DATA=null; LAYOUT={paginas:1,escala:1};
+  scaler.innerHTML=''; scaler.style.width=''; scaler.style.height=''; zoom=null;
+  if(!$('#empty')) $('#viewport').insertAdjacentHTML('afterbegin',
+    '<div class="empty" id="empty">Nenhum orçamento carregado. Envie o PDF do sistema para ver o modelo EOOSIN aqui.</div>');
+  $('#btnPdf').disabled=$('#btnPrint').disabled=$('#btnPdfMob').disabled=true;
+  $('#resumoCard').hidden=true;
+}
+function limparSaida(){
+  limparPreview();
+  PENDENTE=null;
+  $('#btnConverter').disabled=true;
+  status.innerHTML=''; status2.innerHTML='';
+  file.value=''; file2.value='';
+}
+function abrirAba(nome){
+  document.querySelectorAll('.aba').forEach(b=>b.classList.toggle('on', b.dataset.aba===nome));
+  $('#painelCom').hidden = nome!=='com';
+  $('#painelSem').hidden = nome!=='sem';
+  $('#nConf').textContent  = nome==='sem' ? '3' : '2';
+  $('#nGerar').textContent = nome==='sem' ? '4' : '3';
+  limparSaida();
+}
+$('#abaCom').onclick = ()=>abrirAba('com');
+$('#abaSem').onclick = ()=>abrirAba('sem');
 
 function conferencia(D){
   const R=D.resumo;
