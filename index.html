@@ -200,7 +200,10 @@ input[type=file]{display:none}
 .dh{display:grid;grid-template-columns:48mm 1fr 44mm;gap:5mm;align-items:start;padding-bottom:2.6mm}
 .dh .brand{text-align:center}
 .dh .brand svg{width:41mm;color:var(--vinho);display:block;margin:0 auto}
-.dh .tag{margin-top:2.5mm;font-size:5.6pt;font-weight:600;letter-spacing:.9px;color:var(--vinho);white-space:nowrap}
+/* letter-spacing .35px: com .9px o slogan media 199px numa coluna de 181px e
+   vazava dos dois lados — passava por cima do filete que separa a coluna da
+   empresa. Se o texto do slogan mudar, meça de novo (scrollWidth x clientWidth). */
+.dh .tag{margin-top:2.5mm;font-size:5.6pt;font-weight:600;letter-spacing:.35px;color:var(--vinho);white-space:nowrap}
 .dh .co{border-left:.35mm solid var(--linha);border-right:.35mm solid var(--linha);padding:0 5mm}
 .dh .co h1{font-size:10.5pt;font-weight:700;color:var(--vinho);line-height:1.15;letter-spacing:-.2px}
 .dh .co h1 small{display:block;font-size:9pt;font-weight:600}
@@ -229,7 +232,10 @@ input[type=file]{display:none}
 .box{background:var(--off);border:.35mm solid var(--linha);border-radius:1.8mm;padding:1.9mm 3mm}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:1mm 6mm}
 .cols2{display:grid;grid-template-columns:1.05fr 1fr;gap:0 6mm}
-.f{display:flex;gap:2mm;font-size:7pt;padding:.25mm 0;align-items:baseline}
+/* Alinhamento pelo topo da linha, e não por baseline: a baseline de um flex
+   container (o rótulo com ícone) vem do primeiro item dele — o ícone —, e não
+   do texto, o que fazia o valor descer ~3px só nas linhas com ícone. */
+.f{display:flex;gap:2mm;font-size:7pt;padding:.25mm 0;align-items:flex-start}
 .f .k{color:var(--texto-suave);flex:none;min-width:21mm}
 .f .v{font-weight:500;word-break:break-word}
 .f.wide{grid-column:1/-1}
@@ -1445,7 +1451,13 @@ async function svgsParaImagens(root){
     }));
     const txt=new XMLSerializer().serializeToString(c);
     const img=new Image();
-    img.style.cssText=`width:${r.width}px;height:${r.height}px;display:block;flex:none`;
+    /* As margens vão junto: o logo é centrado por `margin:0 auto`, e um <img> sem
+       essa margem cola na borda esquerda da coluna — foi assim que a marca saiu
+       fora de quadro no PDF baixado. O getComputedStyle já devolve a margem em
+       px (o `auto` resolvido), então a imagem cai exatamente onde o SVG estava. */
+    const cs=getComputedStyle(svg);
+    img.style.cssText=`width:${r.width}px;height:${r.height}px;display:block;flex:none;`+
+                      `margin:${cs.marginTop} ${cs.marginRight} ${cs.marginBottom} ${cs.marginLeft}`;
     espera.push(new Promise(res=>{ img.onload=img.onerror=res; }));
     img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(txt)));
     svg.replaceWith(img);
