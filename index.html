@@ -234,6 +234,9 @@ input[type=file]{display:none}
 .f .v{font-weight:500;word-break:break-word}
 .f.wide{grid-column:1/-1}
 .f .k.ic{display:flex;align-items:center;gap:1.6mm;min-width:19mm}
+/* No bloco CLIENTE os valores começam todos na mesma coluna porque os 21mm de
+   min-width cabem o rótulo mais largo — hoje "Insc. Estadual:" (18,3mm a 7pt).
+   Rótulo novo mais largo que isso desalinha só a linha dele: meça antes. */
 .f .k.ic svg{width:3mm;height:3mm;color:var(--vinho);flex:none}
 .quad{display:grid;grid-template-columns:repeat(5,1fr);gap:1mm 4mm}
 
@@ -249,11 +252,13 @@ input[type=file]{display:none}
 
 /* --- tabela de produtos --- */
 table.prod{width:100%;border-collapse:collapse;font-size:6.2pt;table-layout:fixed}
-table.prod thead th{background:var(--vinho);color:#fff;font-size:5.7pt;font-weight:600;letter-spacing:.2px;padding:1.3mm 1.3mm;text-align:left;vertical-align:middle;line-height:1.2}
-table.prod thead th.r{text-align:right}
-table.prod thead th.c{text-align:center}
+table.prod thead th,table.prod tr.repete th{background:var(--vinho);color:#fff;font-size:5.7pt;font-weight:600;letter-spacing:.2px;padding:1.3mm 1.3mm;text-align:left;vertical-align:middle;line-height:1.2}
+table.prod thead th.r,table.prod tr.repete th.r{text-align:right}
+table.prod thead th.c,table.prod tr.repete th.c{text-align:center}
 table.prod tbody td{border-bottom:.3mm solid var(--linha);padding:1.2mm 1.3mm;vertical-align:top;line-height:1.35}
-table.prod tbody tr:nth-child(even) td{background:var(--off)}
+/* O zebrado vai por classe, e não por nth-child: a paginação do download insere
+   linhas de espaço e de cabeçalho repetido, que mudariam a paridade. */
+table.prod tbody tr.par td{background:var(--off)}
 table.prod td.r{text-align:right;white-space:nowrap}
 table.prod td.c{text-align:center}
 table.prod td.cod{font-weight:600}
@@ -421,13 +426,8 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Baixar PDF
         </button>
-        <button class="btn btn-ghost" id="btnPrint" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-          Imprimir / Salvar em PDF
-        </button>
         <div class="hint">
-          <b>Baixar PDF</b> gera o arquivo direto (A4).<br>
-          <b>Imprimir</b> abre o diálogo do navegador — escolha “Salvar como PDF”, margens “Nenhuma” e desmarque cabeçalhos/rodapés para o resultado mais nítido.
+          <b>Baixar PDF</b> gera o arquivo direto (A4).
         </div>
       </div>
 
@@ -727,7 +727,10 @@ function parseQuote(items, fotos){
     const c = {
       hash:at(/^#$/)??14, cod:at(/^Código/i), desc:at(/^Descrição/i),
       ent:px(/^Data de$/i)??px(/^Data/i), qtd:at(/^Qtde/i), un:at(/^Un\.?$/i),
-      pre:at(/^Preço/i), dsc:px(/^Desc\.$/i), tot:at(/^Total/i), ipi:px(/^IPI$/i)
+      pre:at(/^Preço/i), dsc:px(/^Desc\.$/i), tot:at(/^Total/i),
+      // "IPI (R$)" pode vir inteiro na linha do cabeçalho ou quebrado em
+      // "IPI" + "(R$)" nas linhas de cima e de baixo — o sistema faz os dois
+      ipi:at(/^IPI\b/i) ?? px(/^IPI$/i)
     };
     const mid=(a,b)=>(a!=null&&b!=null)?(a+b)/2:null;
     B = {
@@ -935,7 +938,7 @@ function render(D){
   const temFoto = it.some(i=>i.foto);
 
   const linhas = it.map(i=>`
-      <tr>
+      <tr${i.n%2===0?' class="par"':''}>
         <td class="c">${i.n}</td>${temFoto?`
         <td class="foto"><div class="quadro">${
           i.foto ? `<img src="${i.foto}" alt="${esc(i.codigo||'')}">` : ''}</div></td>`:''}
@@ -1009,7 +1012,7 @@ function render(D){
       <div>
         <div class="f"><span class="k">Razão Social:</span><span class="v">${v(D.cliente.razao)}</span></div>
         <div class="f"><span class="k">Nome Fantasia:</span><span class="v">${v(D.cliente.fantasia)}</span></div>
-        <div class="f"><span class="k">Inscrição Estadual:</span><span class="v">${v(D.cliente.ie)}</span></div>
+        <div class="f"><span class="k">Insc. Estadual:</span><span class="v">${v(D.cliente.ie)}</span></div>
         <div class="f"><span class="k">E-mail:</span><span class="v">${v(D.cliente.email)}</span></div>
       </div>
       <div>
@@ -1171,8 +1174,6 @@ const drop=$('#drop'), file=$('#file'), status=$('#status'), scaler=$('#scaler')
 
 /* dispositivo de toque em tela pequena — não afeta desktop/notebook */
 const TOQUE = window.matchMedia('(pointer:coarse)').matches && window.innerWidth<=980;
-const IOS   = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-              (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
 
 const drop2=$('#drop2'), file2=$('#file2'), status2=$('#status2');
 let PENDENTE = null;                 // PDF lido na aba 2, aguardando os dados do cliente
@@ -1233,17 +1234,15 @@ function converter(D, alvo, nomeArq){
     $('#empty')?.remove();
     LAYOUT = paginar(scaler.firstElementChild);
     fit();
-    $('#btnPdf').disabled = $('#btnPrint').disabled = $('#btnPdfMob').disabled = false;
+    $('#btnPdf').disabled = $('#btnPdfMob').disabled = false;
 
     let out = msg('ok', `<b>${esc(nomeArq)}</b> convertido — ${D.itens.length} item(ns) lido(s).`);
     if(LAYOUT.paginas===1 && LAYOUT.escala<1)
       out += msg('warn', `Documento longo: reduzi o conteúdo para <b>${Math.round(LAYOUT.escala*100)}%</b> `+
                          `e ele coube em <b>1 página</b> — nada foi cortado.`);
     if(LAYOUT.paginas>1)
-      out += msg('warn', `Documento muito longo (${D.itens.length} itens): saiu em <b>${LAYOUT.paginas} páginas</b>, `+
-                         `com quebra limpa — totais, condições de pagamento, observações e rodapé nunca são `+
-                         `divididos ao meio. Para repetir o cabeçalho da tabela na página seguinte, use `+
-                         `<b>Imprimir / Salvar em PDF</b>.`);
+      out += msg('warn', `Documento em <b>${LAYOUT.paginas} páginas</b> (${D.itens.length} itens), com quebra `+
+                         `limpa — totais, condições de pagamento, observações e rodapé nunca são divididos ao meio.`);
     if(D._faltando.length)
       out += msg('warn', `<b>Dados ausentes no PDF de origem</b> (mantidos em branco, nada foi estimado):<br>${D._faltando.map(esc).join(' · ')}`);
     if(D._clienteBranco && D._clienteBranco.length)
@@ -1288,7 +1287,7 @@ function limparPreview(){
   scaler.innerHTML=''; scaler.style.width=''; scaler.style.height=''; zoom=null;
   if(!$('#empty')) $('#viewport').insertAdjacentHTML('afterbegin',
     '<div class="empty" id="empty">Nenhum orçamento carregado. Envie o PDF do sistema para ver o modelo EOOSIN aqui.</div>');
-  $('#btnPdf').disabled=$('#btnPrint').disabled=$('#btnPdfMob').disabled=true;
+  $('#btnPdf').disabled=$('#btnPdfMob').disabled=true;
   $('#resumoCard').hidden=true;
 }
 function limparSaida(){
@@ -1364,6 +1363,74 @@ window.addEventListener('resize',()=>{
 $('#viewport').appendChild(scaler);
 
 
+/* ------------------------------------------------------------
+   Paginação do download
+   ------------------------------------------------------------
+   O html2pdf desenha o documento inteiro num canvas só e depois fatia a imagem
+   a cada folha A4 — ele não sabe o que é uma linha de tabela. A opção `avoid`
+   dele não resolve: o espaçador que ela insere é um <div>, e um <div> entre
+   dois <tr> não é posicionado como linha pelo layout de tabela. Por isso as
+   quebras saíam no meio das linhas.
+
+   Aqui a paginação é feita antes da captura, em coordenadas relativas ao próprio
+   documento (as mesmas em que a imagem é fatiada): todo bloco que não pode ser
+   dividido e que cruzaria um corte é empurrado para a folha seguinte, a tabela
+   reganha o cabeçalho no topo de cada folha, e o rodapé fecha a última.
+   ------------------------------------------------------------ */
+function paginarDownload(doc, alturaPagina){
+  // uma folha só: o documento já foi encaixado por paginar(), não há o que cortar
+  if(doc.getBoundingClientRect().height <= alturaPagina + 1) return;
+
+  const INDIVISIVEL = 'table.prod tbody tr, table.prod tfoot tr, .sec-t, .box, .resumo, .bottom, .obs, .foot';
+  const topoDoc  = () => doc.getBoundingClientRect().top;
+  const cabecalho = doc.querySelector('table.prod thead tr');
+  const nCols = cabecalho ? cabecalho.children.length : 1;
+
+  const espacador = (altura, comoLinha) => {
+    if(!comoLinha){
+      const d = document.createElement('div');
+      d.className = 'quebra';
+      d.style.cssText = `display:block;height:${altura}px`;
+      return d;
+    }
+    const tr = document.createElement('tr');
+    tr.className = 'quebra';
+    tr.innerHTML = `<td colspan="${nCols}" style="height:${altura}px;padding:0;border:0"></td>`;
+    return tr;
+  };
+
+  doc.querySelectorAll(INDIVISIVEL).forEach(el=>{
+    const r = el.getBoundingClientRect();
+    if(r.height > alturaPagina) return;              // não cabe numa folha: não há o que empurrar
+    const topo = r.top - topoDoc(), base = topo + r.height - .5;
+    if(Math.floor(topo/alturaPagina) === Math.floor(base/alturaPagina)) return;
+
+    // +1px: pousar exatamente em cima do corte deixa meio pixel do bloco na
+    // folha anterior, que vira um risco no pé da página
+    const sobra = alturaPagina - (topo % alturaPagina) + 1;
+    const ehLinha = el.tagName === 'TR';
+    el.parentNode.insertBefore(espacador(sobra, ehLinha), el);
+    // a tabela continua na folha nova: o cabeçalho vai junto
+    if(ehLinha && cabecalho && el.parentNode.tagName === 'TBODY'){
+      const rep = cabecalho.cloneNode(true);
+      rep.className = 'repete';
+      el.parentNode.insertBefore(rep, el);
+    }
+  });
+
+  /* O rodapé encosta no pé da última folha, como numa página só. A sobra sai da
+     altura do DOCUMENTO, não da base do rodapé: medindo pelo rodapé, o padding
+     que vem depois dele passa do corte e gera uma folha em branco no fim.
+     O meio pixel a menos é a margem contra o arredondamento do Chrome. */
+  const rodape = doc.querySelector('.foot');
+  if(rodape){
+    const altura = doc.getBoundingClientRect().height;
+    const sobra  = alturaPagina - (altura % alturaPagina) - .5;
+    if(sobra > 1 && sobra < alturaPagina - 1)
+      rodape.parentNode.insertBefore(espacador(sobra, false), rodape);
+  }
+}
+
 /** converte cada <svg> inline em <img> data-URI (necessário para o html2canvas) */
 async function svgsParaImagens(root){
   const svgs=[...root.querySelectorAll('svg')], espera=[];
@@ -1392,18 +1459,7 @@ function nomeArquivo(D){
             .map(w=>w.replace(/[^\wÀ-ÿ]/g,'')).filter(Boolean).join('_');
   return `Orcamento_${cli||'CLIENTE'}.pdf`;
 }
-$('#btnPrint').onclick = ()=>{
-  const z=zoom; zoom=1; apply(); window.print();
-  setTimeout(()=>{ zoom=z; apply(); },600);
-};
 $('#btnPdfMob').onclick = ()=> $('#btnPdf').click();
-if(TOQUE && IOS){                       // Safari do iPhone não abre diálogo de impressão
-  const bp=$('#btnPrint'); bp.style.display='none';
-  bp.insertAdjacentHTML('afterend',
-    '<div class="msg msg-warn" style="margin-top:9px"><i class="dot"></i><div>'+
-    'No iPhone/iPad use <b>Baixar PDF</b> — o Safari não abre o diálogo de impressão.'+
-    '</div></div>');
-}
 $('#btnPdf').onclick = async ()=>{
   if(!DATA) return;
   const btn=$('#btnPdf'); const txt=btn.innerHTML;
@@ -1415,6 +1471,9 @@ $('#btnPdf').onclick = async ()=>{
   holder.style.cssText='position:absolute;left:0;top:0;width:210mm;background:#fff';
   holder.appendChild(clone); document.body.appendChild(holder);
   await svgsParaImagens(clone);          // html2canvas não desenha SVG inline
+  // a folha da imagem é a largura do documento na proporção do A4 — a mesma
+  // altura em que o html2pdf vai fatiar o canvas
+  paginarDownload(clone, clone.offsetWidth * 297/210);
   const sx=window.scrollX, sy=window.scrollY; window.scrollTo(0,0);
   try{
     await html2pdf().set({
@@ -1425,10 +1484,11 @@ $('#btnPdf').onclick = async ()=>{
                    width:clone.offsetWidth, height:clone.offsetHeight,
                    windowWidth:clone.offsetWidth, windowHeight:clone.offsetHeight},
       jsPDF:{unit:'mm', format:'a4', orientation:'portrait'},
-      pagebreak:{mode:['css','legacy'],
-                 avoid:['tr','.bottom','.pay','.tot','.obs','.foot','.box','.resumo','.sec-t']}
+      // as quebras já foram resolvidas por paginarDownload; o `avoid` do html2pdf
+      // não sabe lidar com <tr> e só atrapalharia aqui
+      pagebreak:{mode:[]}
     }).from(clone).save();
-  }catch(e){ alert('Falha ao gerar o PDF: '+e.message+'\nUse o botão “Imprimir / Salvar em PDF”.'); }
+  }catch(e){ alert('Falha ao gerar o PDF: '+e.message); }
   holder.remove(); window.scrollTo(sx,sy);
   btn.disabled=false; btn.innerHTML=txt;
 };
