@@ -215,6 +215,7 @@ input[type=file]{display:none}
 .dh .meta .q{margin-top:2mm;border-top:.35mm solid var(--linha);padding-top:1.6mm}
 .dh .meta .q em{display:block;font-style:normal;font-size:5.6pt;font-weight:600;letter-spacing:1px;color:var(--texto-suave)}
 .dh .meta .q b{font-size:8pt;font-weight:600}
+.dh .meta .val{margin-top:2.2mm;font-size:6.4pt;font-weight:600;letter-spacing:.2px;color:var(--vinho)}
 
 /* --- títulos de seção --- */
 .sec{margin-top:2.4mm}
@@ -236,9 +237,8 @@ input[type=file]{display:none}
 .f .k.ic svg{width:3mm;height:3mm;color:var(--vinho);flex:none}
 .quad{display:grid;grid-template-columns:repeat(5,1fr);gap:1mm 4mm}
 
-/* --- cards do resumo --- */
+/* --- cards do resumo (o nº de colunas sai da quantidade de cartões) --- */
 .resumo{display:grid;grid-template-columns:repeat(6,1fr) 1.35fr;gap:1.4mm}
-.resumo.sem-desc{grid-template-columns:repeat(4,1fr) 1.35fr}
 .rc{background:var(--bege);border:.35mm solid var(--linha);border-radius:1.6mm;padding:1.5mm 1.6mm;text-align:center}
 .rc em{display:block;font-style:normal;font-size:5.4pt;font-weight:600;letter-spacing:.3px;color:var(--texto-suave);line-height:1.25;min-height:5.6mm}
 .rc b{font-size:8.2pt;font-weight:700;color:var(--texto);white-space:nowrap}
@@ -651,9 +651,11 @@ function parseQuote(items){
   } else miss.push('Bloco RESUMO');
 
   /* ---- produtos --------------------------------------------- */
-  const hdr = L.find(l=>/Código/i.test(l.text) && /Descrição/i.test(l.text));
-  // bandas de coluna: a partir do cabeçalho real; se faltar, usa o padrão do sistema
-  let B = {cod:17, desc:41, ent:229, qtd:415, un:445, pre:463, dsc:493, tot:528};
+  const hdrs = L.filter(l=>/Código/i.test(l.text) && /Descrição/i.test(l.text));
+  const hdr  = hdrs[0];
+  /* bandas de coluna: a partir do cabeçalho real; se faltar, usa o padrão do sistema.
+     B.ipi = Infinity significa "este arquivo não tem coluna de IPI por item". */
+  let B = {cod:17, desc:41, ent:229, qtd:415, un:445, pre:463, dsc:493, tot:528, ipi:Infinity};
   if(hdr){
     const at = re => { const i=hdr.items.find(i=>re.test(i.s)); return i?i.x:null; };
     const above = L.filter(l=>l.top>hdr.top-12 && l.top<hdr.top+12).flatMap(l=>l.items);
@@ -661,14 +663,15 @@ function parseQuote(items){
     const c = {
       hash:at(/^#$/)??14, cod:at(/^Código/i), desc:at(/^Descrição/i),
       ent:px(/^Data de$/i)??px(/^Data/i), qtd:at(/^Qtde/i), un:at(/^Un\.?$/i),
-      pre:at(/^Preço/i), dsc:px(/^Desc\.$/i), tot:at(/^Total/i)
+      pre:at(/^Preço/i), dsc:px(/^Desc\.$/i), tot:at(/^Total/i), ipi:px(/^IPI$/i)
     };
     const mid=(a,b)=>(a!=null&&b!=null)?(a+b)/2:null;
     B = {
       cod: mid(c.hash,c.cod) ?? B.cod, desc: mid(c.cod,c.desc) ?? B.desc,
       ent: mid(c.desc,c.ent) ?? B.ent, qtd: mid(c.ent,c.qtd) ?? B.qtd,
       un : mid(c.qtd,c.un)  ?? B.un , pre: mid(c.un,c.pre)  ?? B.pre,
-      dsc: mid(c.pre,c.dsc) ?? B.dsc, tot: mid(c.dsc,c.tot) ?? B.tot
+      dsc: mid(c.pre,c.dsc) ?? B.dsc, tot: mid(c.dsc,c.tot) ?? B.tot,
+      ipi: mid(c.tot,c.ipi) ?? Infinity
     };
     if(c.dsc==null){                       // orçamento sem coluna de desconto
       D.semColunaDesconto = true;
@@ -686,27 +689,45 @@ function parseQuote(items){
   const ehCabecalho = l => l.items.every(i =>
         i.s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
          .split(/\s+/).every(w => VOCAB.has(w)));
-  let hdrBottom = null;
-  if(hdr){
-    hdrBottom = hdr.top;
-    L.filter(l=>Math.abs(l.top-hdr.top)<=14 && ehCabecalho(l))
-     .forEach(l=>{ hdrBottom = Math.max(hdrBottom, l.top); });
-  }
+  /* O sistema repete, no topo de cada página seguinte, o cabeçalho da empresa e o
+     da tabela. Nada acima do cabeçalho da tabela de uma página é produto: sem esse
+     corte o cabeçalho repetido vira um item fantasma e ainda engole as linhas de
+     descrição vizinhas. Um corte por página, sempre pelo cabeçalho daquela página. */
+  const fimCab = new Map();                    // página -> topo da última linha do cabeçalho
+  hdrs.forEach(h=>{
+    const pg = h.items[0].page;
+    let b = h.top;
+    L.filter(l=>Math.abs(l.top-h.top)<=14 && ehCabecalho(l))
+     .forEach(l=>{ b = Math.max(b, l.top); });
+    fimCab.set(pg, Math.max(fimCab.get(pg) ?? 0, b));
+  });
+  const hdrBottom = hdr ? fimCab.get(hdr.items[0].page) : null;
   const pStart = Math.max(tPro!=null?tPro:0, hdrBottom!=null?hdrBottom+1:0);
   const pEnd   = lTotal ? lTotal.top-1 : (lFinal?lFinal.top-1:null);
-  const rows   = between(L,pStart,pEnd);
+  const rows   = between(L,pStart,pEnd)
+                 .filter(l=>{ const corte = fimCab.get(l.items[0].page);
+                              return corte==null || l.top > corte; });
 
   const isMain = l => l.items.some(i=>i.x>=B.pre && i.x<B.dsc) &&
                       l.items.some(i=>i.x>=B.tot) &&
                       l.items.some(i=>i.x>=B.qtd && i.x<B.un);
   const mains = rows.filter(isMain);
 
+  /* Colunas numéricas da direita, na ordem em que existem NESTE arquivo. Cada número
+     cai na coluna cuja banda o contém e, quando dois vêm colados num item só
+     ("19.103,040012,00"), o seguinte cai na coluna seguinte. Nada é deduzido pela
+     QUANTIDADE de números: o formato novo traz [preço, total, IPI] exatamente onde o
+     antigo trazia [preço, desc. (%), total]. */
+  const COLS = [{k:'preco', x:B.pre}];
+  if(B.dsc < B.tot)   COLS.push({k:'desc',  x:B.dsc});
+  COLS.push({k:'total', x:B.tot});
+  if(B.ipi < Infinity) COLS.push({k:'ipi',   x:B.ipi});
+
   mains.forEach((m,idx)=>{
     // linhas que pertencem a este item = as mais próximas deste "main"
     const own = rows.filter(l=> mains.reduce((best,mm)=>
         Math.abs(l.top-mm.top) < Math.abs(l.top-best.top) ? mm : best, mains[0]) === m);
-    const codParts=[], descParts=[]; let ent=null, qtd=null, un=null;
-    let numsRight=[];
+    const codParts=[], descParts=[], val={}; let ent=null, qtd=null, un=null;
     own.forEach(l=>{
       l.items.forEach(i=>{
         if(i.x < B.cod){                                   // coluna "#"
@@ -718,20 +739,20 @@ function parseQuote(items){
         else if(i.x < B.qtd){ if(i.s!=='-') ent = (ent?ent+' ':'')+i.s; }
         else if(i.x < B.un){  if(l===m) qtd = num(i.s); }
         else if(i.x < B.pre){ if(l===m) un  = i.s; }
-        else if(l===m)        numsRight = numsRight.concat(nums(i.s));
+        else if(l===m){
+          let k = COLS.reduce((acc,cl,ix)=> i.x>=cl.x ? ix : acc, 0);
+          nums(i.s).forEach(n=>{ if(COLS[k] && val[COLS[k].k]==null) val[COLS[k].k]=n; k++; });
+        }
       });
     });
-    let preco=null, desc=0, total=null;
-    if(numsRight.length>=3){ [preco,desc,total]=[numsRight[0],numsRight[1],numsRight[numsRight.length-1]]; }
-    else if(numsRight.length===2){ [preco,total]=numsRight; desc=0; }
-    else if(numsRight.length===1){ preco=numsRight[0]; }
 
     D.itens.push({
       n: idx+1,
       codigo: codParts.join('').replace(/\s+/g,'') || null,
       descricao: descParts.join(' ').replace(/\s+/g,' ').trim() || null,
       entrega: ent, qtde: qtd, un: un,
-      precoFinalUn: preco, descPct: desc, totalFinal: total
+      precoFinalUn: val.preco ?? null, descPct: val.desc ?? 0,
+      totalFinal: val.total ?? null, ipi: val.ipi ?? null
     });
   });
 
@@ -741,6 +762,20 @@ function parseQuote(items){
   if(!D.itens.length) miss.push('Itens do orçamento');
 
   /* ---- derivações + conferências ---------------------------- */
+  /* O sistema passou a exportar o IPI por item, na última coluna. O documento mostra
+     um preço só (o de etiqueta), então o IPI entra no valor do produto — inclusive no
+     valor cheio e no desconto, para que a linha continue fechando
+     (cheio − desconto = final). Guardamos os valores-base, como vieram do sistema,
+     porque é sobre eles que as conferências abaixo continuam rodando. */
+  D.temIpiPorItem = D.itens.some(it => it.ipi != null);
+  D.itens.forEach(it=>{
+    it.baseTotal   = it.totalFinal;
+    it.basePrecoUn = it.precoFinalUn;
+    if(it.ipi!=null && it.totalFinal!=null){
+      it.totalFinal   = Math.round((it.totalFinal + it.ipi)*100)/100;
+      it.precoFinalUn = it.qtde ? Math.round(it.totalFinal/it.qtde*10000)/10000 : null;
+    }
+  });
   D.itens.forEach(it=>{
     const d = (it.descPct||0)/100;
     if(it.totalFinal!=null && d>0 && d<1){
@@ -751,29 +786,37 @@ function parseQuote(items){
       it.precoCheioUn = it.precoFinalUn;
     }
     it.valorDesconto = (it.totalCheio!=null && it.totalFinal!=null) ? Math.round((it.totalCheio-it.totalFinal)*100)/100 : null;
+    it.baseCheio = (it.baseTotal!=null && d>0 && d<1) ? Math.round(it.baseTotal/(1-d)*100)/100 : it.baseTotal;
+    it.baseDesconto = (it.baseCheio!=null && it.baseTotal!=null) ? Math.round((it.baseCheio-it.baseTotal)*100)/100 : null;
   });
   const soma = k => D.itens.reduce((s,i)=> s + (i[k]||0), 0);
   D.somaFinal    = Math.round(soma('totalFinal')*100)/100;
   D.somaCheio    = Math.round(soma('totalCheio')*100)/100;
   D.somaDesconto = Math.round(soma('valorDesconto')*100)/100;
   D.somaQtde     = soma('qtde');
+  D.somaBase     = Math.round(soma('baseTotal')*100)/100;      // sem IPI, como no sistema
+  D.somaBaseDesc = Math.round(soma('baseDesconto')*100)/100;
+  D.somaIpi      = D.temIpiPorItem ? Math.round(soma('ipi')*100)/100 : null;
 
   const near=(a,b,t=0.05)=>a!=null&&b!=null&&Math.abs(a-b)<=t;
-  if(D.totProdutos!=null && !near(D.somaFinal,D.totProdutos,0.05))
-    warn.push(`Soma dos itens (${BR(D.somaFinal)}) ≠ TOTAL do sistema (${BR(D.totProdutos)}).`);
-  if(D.resumo.produtos!=null && !near(D.somaFinal,D.resumo.produtos,0.05))
-    warn.push(`Soma dos itens (${BR(D.somaFinal)}) ≠ Produtos do RESUMO (${BR(D.resumo.produtos)}).`);
-  if(D.resumo.desconto!=null && !near(D.somaDesconto,D.resumo.desconto,0.05))
-    warn.push(`Desconto calculado (${BR(D.somaDesconto)}) ≠ Desconto do RESUMO (${BR(D.resumo.desconto)}).`);
+  if(D.totProdutos!=null && !near(D.somaBase,D.totProdutos,0.05))
+    warn.push(`Soma dos itens (${BR(D.somaBase)}) ≠ TOTAL do sistema (${BR(D.totProdutos)}).`);
+  if(D.resumo.produtos!=null && !near(D.somaBase,D.resumo.produtos,0.05))
+    warn.push(`Soma dos itens (${BR(D.somaBase)}) ≠ Produtos do RESUMO (${BR(D.resumo.produtos)}).`);
+  if(D.resumo.desconto!=null && !near(D.somaBaseDesc,D.resumo.desconto,0.05))
+    warn.push(`Desconto calculado (${BR(D.somaBaseDesc)}) ≠ Desconto do RESUMO (${BR(D.resumo.desconto)}).`);
+  if(D.temIpiPorItem && D.resumo.ipi!=null && !near(D.somaIpi,D.resumo.ipi,0.05))
+    warn.push(`Soma do IPI dos itens (${BR(D.somaIpi)}) ≠ IPI do RESUMO (${BR(D.resumo.ipi)}).`);
   const somaFatura = (D.resumo.produtos??0)+(D.resumo.st??0)+(D.resumo.ipi??0);
   if(D.resumo.fatura!=null && !near(somaFatura,D.resumo.fatura,0.05))
     warn.push(`Produtos + ST + IPI (${BR(somaFatura)}) ≠ Total da fatura (${BR(D.resumo.fatura)}).`);
   if(D.totalFinal!=null && D.resumo.fatura!=null && !near(D.totalFinal,D.resumo.fatura,0.05))
     warn.push(`TOTAL FINAL (${BR(D.totalFinal)}) ≠ Total da fatura do RESUMO (${BR(D.resumo.fatura)}).`);
   D.itens.forEach(it=>{
-    if(it.qtde!=null && it.precoFinalUn!=null && it.totalFinal!=null){
-      const calc=Math.round(it.qtde*it.precoFinalUn*100)/100;
-      if(!near(calc,it.totalFinal,0.05)) warn.push(`Item ${it.n} (${it.codigo}): qtde × preço = ${BR(calc)}, mas o total é ${BR(it.totalFinal)}.`);
+    // qtde × preço × total, item a item, sobre os valores do sistema (sem o IPI embutido)
+    if(it.qtde!=null && it.basePrecoUn!=null && it.baseTotal!=null){
+      const calc=Math.round(it.qtde*it.basePrecoUn*100)/100;
+      if(!near(calc,it.baseTotal,0.05)) warn.push(`Item ${it.n} (${it.codigo}): qtde × preço = ${BR(calc)}, mas o total é ${BR(it.baseTotal)}.`);
     }
     ['codigo','descricao','qtde','precoFinalUn','totalFinal'].forEach(k=>{
       if(it[k]===null||it[k]===undefined) miss.push(`Item ${it.n}: ${k}`);
@@ -803,6 +846,7 @@ const IC = {
 };
 const LOGO = `<svg viewBox="498 293 924 414" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="EOOSIN HomeWorld"><path fill-rule="nonzero" fill="currentColor" d="M 1259.460938 609.117188 L 1232.949219 521.65625 L 1232.605469 609.050781 L 1189.644531 609.101562 L 1189.609375 413.710938 L 1232.484375 413.742188 L 1260.855469 498.957031 L 1261.253906 413.773438 L 1304.234375 413.78125 L 1304.253906 609 Z M 1170.144531 609.023438 L 1118.664062 609.023438 L 1118.664062 413.132812 L 1170.144531 413.132812 Z M 1100.675781 578.855469 C 1099.074219 589.234375 1093.800781 597.472656 1084.917969 603.109375 C 1062.066406 617.613281 1023.285156 617.328125 1001.414062 599.433594 C 984.78125 585.828125 987.421875 560.390625 987.128906 539.210938 L 1034.542969 539.292969 L 1034.695312 567.609375 C 1034.714844 570.984375 1035.324219 574.210938 1036.808594 577.101562 C 1039.523438 579.78125 1043.171875 580.460938 1046.8125 579.222656 C 1055.441406 576.296875 1054.578125 560.261719 1052.3125 549.398438 C 1051.285156 544.484375 1048.558594 540.5 1044.453125 537.671875 L 1018.5 519.796875 C 1011.558594 515.011719 1004.625 510.625 998.730469 504.65625 C 983.597656 489.332031 983.359375 464.34375 987.25 443.621094 C 991.9375 418.671875 1016.519531 409.945312 1040.613281 409.667969 C 1055.066406 409.5 1069.027344 412.078125 1081.351562 419.449219 C 1099.949219 430.574219 1097.851562 451.359375 1098.339844 472.945312 L 1050.382812 472.992188 L 1050.136719 452.230469 C 1050.105469 449.488281 1049.46875 446.433594 1047.339844 444.539062 C 1045.136719 442.582031 1041.542969 442.800781 1038.8125 444.132812 C 1032.523438 447.195312 1032.066406 464.816406 1036.375 472.714844 C 1039 477.527344 1043.972656 480.390625 1048.589844 483.195312 C 1061.917969 491.296875 1074.679688 499.296875 1086.304688 509.644531 C 1093.210938 515.792969 1097.832031 523.023438 1099.691406 532.203125 C 1102.824219 547.667969 1103.089844 563.238281 1100.675781 578.855469 M 970.78125 542.355469 L 969.441406 569.570312 C 967.230469 588.691406 954.828125 603.90625 936.257812 609.703125 C 908.539062 618.351562 871.828125 612.890625 858.148438 584.328125 C 851.496094 570.433594 852.746094 534.511719 852.761719 514.761719 C 852.78125 495.777344 852.351562 477.609375 853.574219 458.691406 C 854.386719 446.089844 858.59375 434.234375 867.671875 425.585938 C 878.804688 414.980469 893.585938 410.175781 908.832031 409.746094 C 919.175781 409.453125 928.621094 410.398438 938.160156 413.910156 C 955.628906 420.339844 967.691406 435.363281 969.578125 453.984375 L 970.828125 476.613281 Z M 842.433594 398.023438 L 838.386719 366.234375 L 846.457031 366.453125 L 848.378906 382.363281 L 850.636719 366.230469 L 858.902344 366.433594 L 860.535156 384.125 L 863.191406 366.457031 C 865.492188 365.996094 868.492188 366.027344 871.035156 366.421875 L 867.070312 398.0625 L 857.300781 398.0625 L 854.894531 383.738281 C 853.183594 388.121094 853.082031 392.597656 852.351562 397.753906 Z M 835.75 395.609375 C 834.019531 397.992188 831.058594 398.683594 827.511719 398.480469 C 824.144531 398.285156 820.089844 396.597656 819.742188 392.582031 C 819.28125 387.308594 818.328125 380.859375 820.496094 375.753906 C 822.957031 369.964844 832.902344 370.40625 835.90625 375.21875 C 837.929688 378.464844 837.347656 382.011719 837.300781 385.554688 L 827.21875 385.828125 C 827.210938 388.789062 826.597656 391.300781 828.136719 394.15625 C 830.171875 392.800781 830.335938 390.96875 829.4375 387.742188 C 832.277344 386.753906 834.398438 387.191406 837.25 387.285156 C 837.632812 390.253906 837.449219 393.273438 835.75 395.609375 M 835.023438 558.578125 C 834.722656 567.765625 833.636719 576.445312 829.902344 584.675781 C 824.09375 597.5 812.542969 606.769531 798.53125 610.4375 C 769.648438 617.996094 734.4375 611.457031 722.570312 583.285156 C 719.414062 575.78125 718.328125 567.746094 718.015625 559.417969 C 716.8125 527.265625 716.851562 495.769531 717.984375 463.605469 C 718.339844 453.558594 719.960938 444.066406 724.800781 435.476562 C 737.359375 413.195312 763.785156 407.429688 788.714844 410.53125 C 802.515625 412.246094 815.492188 418.535156 824.3125 429.367188 C 831.4375 438.117188 834.304688 448.910156 834.800781 460.351562 C 836.226562 493.320312 836.097656 525.609375 835.023438 558.578125 M 704.226562 609.070312 L 615.425781 609.085938 L 615.460938 413.734375 L 700.925781 413.757812 L 700.9375 452.976562 L 666.78125 452.992188 L 666.746094 489.765625 L 698.78125 489.871094 L 698.804688 526.984375 L 666.65625 527 L 666.753906 569.761719 L 704.265625 569.867188 Z M 754.472656 366.207031 L 754.921875 376.613281 C 754.964844 377.667969 757.105469 377.65625 757.121094 376.652344 L 757.28125 366.339844 L 765.542969 366.222656 L 765.5625 397.953125 L 757.324219 397.90625 L 757.152344 385.441406 C 757.140625 384.382812 754.710938 384.480469 754.699219 385.628906 L 754.601562 397.804688 L 746.582031 398.023438 L 746.515625 366.226562 Z M 777.234375 371.652344 C 781.070312 371.773438 785.84375 373.253906 785.914062 377.546875 L 786.140625 391.144531 C 786.222656 396.21875 781.917969 398.738281 776.808594 398.566406 C 771.652344 398.394531 768.273438 396.070312 768.265625 391.128906 L 768.253906 379.832031 C 768.246094 374.476562 772 371.488281 777.234375 371.652344 M 788.902344 372.382812 C 791.679688 371 795.316406 373.042969 797.265625 372.65625 C 800.464844 371.828125 803.449219 371.007812 806.476562 373.566406 C 808.296875 372.527344 810.308594 371.285156 812.445312 371.699219 C 813.855469 371.972656 816.519531 372.894531 816.5625 375.242188 L 816.992188 397.675781 C 814.222656 398.125 811.597656 398.101562 809.265625 397.691406 C 808.726562 390.292969 810.539062 383.609375 808.074219 375.933594 C 805.453125 383.210938 807.324219 390.097656 806.816406 397.6875 C 804.59375 398.070312 801.875 398.085938 799.15625 397.6875 L 799.039062 378.257812 C 799.035156 377.5 798.609375 377.132812 798.441406 376.863281 C 798.117188 376.335938 796.5625 376.316406 796.558594 377.304688 L 796.453125 397.734375 C 793.855469 398.023438 791.410156 398.078125 788.808594 397.71875 Z M 881.257812 371.621094 C 886.183594 371.824219 889.925781 374.730469 889.886719 379.929688 L 889.8125 390.933594 C 889.773438 396 886.042969 398.492188 880.859375 398.507812 C 875.777344 398.527344 871.941406 396.574219 871.9375 391.621094 L 871.929688 379.367188 C 871.925781 374.058594 876.1875 371.414062 881.257812 371.621094 M 892.453125 373.140625 C 894.109375 371.335938 898.886719 371.355469 900.5 373.941406 C 901.90625 373.089844 902.679688 371.921875 904.933594 371.691406 L 904.824219 380.523438 C 902.039062 380.515625 900.339844 382.058594 900.34375 384.546875 L 900.359375 397.609375 C 897.425781 398.203125 895.246094 398.199219 892.363281 397.625 Z M 914.738281 366.222656 L 915.007812 379.433594 L 914.890625 397.773438 L 906.753906 397.894531 L 906.691406 366.234375 Z M 920.328125 372.15625 C 922.84375 371.292969 925.3125 371.667969 927.511719 373.523438 L 927.738281 366.210938 L 935.449219 366.230469 L 935.460938 397.679688 C 932.683594 398.980469 929.597656 397.703125 926.726562 397.554688 C 924.933594 397.460938 922.761719 398.984375 921.011719 398.335938 C 919.789062 397.882812 917.695312 396.875 917.644531 394.710938 L 917.273438 378.21875 C 917.207031 375.382812 918.207031 372.882812 920.328125 372.15625 M 1381.878906 392.816406 L 992.925781 305.710938 C 970.511719 300.695312 946.992188 301.203125 924.554688 306.230469 L 544.328125 391.410156 C 532.660156 394.023438 521.867188 397.335938 512.824219 404.898438 C 510.007812 407.253906 505.996094 410.929688 505.996094 415.171875 L 506 585.914062 C 506 595.539062 526.679688 605.609375 538.4375 608.226562 L 929.066406 695.277344 C 950.078125 698.644531 970.90625 698.652344 991.96875 695.273438 L 1237.441406 640.488281 L 1359.445312 613.386719 L 1387.042969 606.742188 C 1396.832031 604.386719 1413.894531 594.816406 1413.902344 585.375 L 1414.003906 414.890625 C 1411.3125 403.449219 1393.589844 395.4375 1381.878906 392.816406 "/><path fill-rule="nonzero" fill="currentColor" d="M 911.75 442.925781 C 907.882812 443.003906 905.007812 445.464844 904.734375 449.792969 L 903.804688 464.464844 L 903.894531 561.007812 C 903.898438 566.496094 903.835938 571.5 905.851562 576.585938 C 907.355469 580.390625 914.984375 581.296875 917.105469 577.300781 C 919.425781 572.9375 919.433594 568.136719 919.4375 563.449219 L 919.605469 463.652344 L 918.878906 449.660156 C 918.65625 445.335938 915.6875 442.847656 911.75 442.925781 "/><path fill-rule="nonzero" fill="currentColor" d="M 783.199219 447.644531 C 782.386719 443.8125 778.691406 442.578125 775.199219 443.0625 C 772.34375 443.457031 769.796875 445.925781 769.597656 449.398438 L 768.652344 466.058594 L 768.613281 557.765625 L 769.515625 573.78125 C 769.746094 577.8125 773.175781 579.902344 776.769531 579.832031 C 780.464844 579.761719 783.261719 577.203125 783.449219 572.761719 L 784.402344 550.457031 L 784.378906 464.445312 C 784.378906 458.597656 784.359375 453.144531 783.199219 447.644531 "/><path fill-rule="nonzero" fill="currentColor" d="M 927.082031 393.464844 C 927.324219 393.273438 927.679688 392.683594 927.675781 391.613281 L 927.617188 377.3125 C 927.613281 376.375 926.140625 376.285156 925.707031 376.730469 C 925.484375 376.964844 925.21875 377.417969 925.230469 378.1875 L 925.40625 392.609375 C 925.417969 393.53125 926.671875 393.796875 927.082031 393.464844 "/><path fill-rule="nonzero" fill="currentColor" d="M 882.089844 376.355469 L 879.640625 376.355469 L 879.640625 393.675781 L 882.089844 393.675781 Z M 882.089844 376.355469 "/><path fill-rule="nonzero" fill="currentColor" d="M 829.597656 376.519531 L 827.15625 376.507812 L 827.132812 381.363281 L 829.574219 381.375 Z M 829.597656 376.519531 "/><path fill-rule="nonzero" fill="currentColor" d="M 776.78125 393.648438 C 777.054688 393.875 778.304688 393.730469 778.316406 392.769531 L 778.484375 378.214844 C 778.496094 377.019531 778.199219 376.75 777.589844 376.476562 C 777.242188 376.320312 776.089844 376.675781 776.089844 377.175781 L 776.066406 392.128906 C 776.066406 392.894531 776.488281 393.410156 776.78125 393.648438 "/></svg>`;
 const INSTAGRAM = '@eoosinbrasil';   // perfil oficial (confirmado pelo cliente em 14/08/2026)
+const VALIDADE  = 'Orçamento válido por 3 dias';   // texto fixo do cabeçalho
 
 /* ============================================================
    4. RENDERIZAÇÃO DO DOCUMENTO
@@ -830,8 +874,27 @@ function render(D){
         <td class="r fin">${i.totalFinal!=null?BR(i.totalFinal):'—'}</td>
       </tr>`).join('');
 
-  const cheio = (R.produtos!=null && R.desconto!=null) ? R.produtos+R.desconto : D.somaCheio;
+  /* Com IPI por item, o documento mostra um preço só: o valor dos produtos já vem com
+     o IPI embutido (é o que o cliente paga) e não existe linha de IPI em lugar nenhum.
+     Sem IPI por item não há como distribuí-lo entre os produtos sem inventar valor —
+     nesse caso o documento segue mostrando a linha de IPI do RESUMO, como antes. */
+  const comIpi   = !!D.temIpiPorItem;
+  const produtos = comIpi
+        ? (R.produtos!=null && R.ipi!=null ? Math.round((R.produtos+R.ipi)*100)/100 : D.somaFinal)
+        : (R.produtos ?? D.somaFinal);
+  const cheio    = comIpi ? D.somaCheio
+        : ((R.produtos!=null && R.desconto!=null) ? R.produtos+R.desconto : D.somaCheio);
+  const desconto = comIpi ? D.somaDesconto : (R.desconto ?? D.somaDesconto);
   const rc = (lab,val,cls='') => `<div class="rc ${cls}"><em>${lab}</em><b>${val!=null?BR(val):'—'}</b></div>`;
+  const cards = [
+    temDesc ? rc('PRODUTOS<br>VALOR CHEIO (R$)', cheio) : '',
+    temDesc ? rc('DESCONTO<br>(R$)', desconto, 'neg') : '',
+    rc(temDesc?'PRODUTOS<br>COM DESCONTO (R$)':'PRODUTOS<br>(VALOR R$)', produtos),
+    rc('ST<br>(R$)', R.st),
+    comIpi ? '' : rc('IPI<br>(R$)', R.ipi),
+    rc('NF-e<br>(VALOR R$)', R.nfe),
+    rc('TOTAL A PAGAR<br>(R$)', R.fatura ?? D.totalFinal, 'tot')
+  ].filter(Boolean);
 
   const doc = `
 <div class="doc"><div class="doc-inner">
@@ -859,6 +922,7 @@ function render(D){
         <div class="l">${IC.cal}<span>DATA: ${v(D.data)}${D.hora?' '+esc(D.hora):''}</span></div>
         <div class="q"><em>REPRESENTANTE</em><b>${v(D.representante)}</b></div>
       </div>
+      <div class="val">${esc(VALIDADE)}</div>
     </div>
   </div>
 
@@ -902,14 +966,8 @@ function render(D){
   <!-- ======= RESUMO ======= -->
   <div class="sec">
     <div class="sec-t"><i class="ic">${IC.doc}</i><h3>RESUMO</h3><i class="rule"></i></div>
-    <div class="resumo${temDesc?'':' sem-desc'}">
-      ${temDesc?rc('PRODUTOS<br>VALOR CHEIO (R$)', cheio):''}
-      ${temDesc?rc('DESCONTO<br>(R$)', R.desconto, 'neg'):''}
-      ${rc(temDesc?'PRODUTOS<br>COM DESCONTO (R$)':'PRODUTOS<br>(VALOR R$)', R.produtos)}
-      ${rc('ST<br>(R$)', R.st)}
-      ${rc('IPI<br>(R$)', R.ipi)}
-      ${rc('NF-e<br>(VALOR R$)', R.nfe)}
-      ${rc('TOTAL A PAGAR<br>(R$)', R.fatura ?? D.totalFinal, 'tot')}
+    <div class="resumo" style="grid-template-columns:repeat(${cards.length-1},1fr) 1.35fr">
+      ${cards.join('')}
     </div>
   </div>
 
@@ -957,11 +1015,11 @@ function render(D){
     <div class="tot">
       ${temDesc?`
       <div class="r"><span>SUBTOTAL PRODUTOS (VALOR CHEIO)</span><b>R$ ${BR(cheio)}</b></div>
-      <div class="r neg"><span>(−) DESCONTO CONCEDIDO</span><b>− R$ ${BR(R.desconto ?? D.somaDesconto)}</b></div>
-      <div class="r sub"><span>SUBTOTAL COM DESCONTO</span><b>R$ ${BR(R.produtos ?? D.somaFinal)}</b></div>`
-      :`<div class="r sub"><span>SUBTOTAL PRODUTOS</span><b>R$ ${BR(R.produtos ?? D.somaFinal)}</b></div>`}
+      <div class="r neg"><span>(−) DESCONTO CONCEDIDO</span><b>− R$ ${BR(desconto)}</b></div>
+      <div class="r sub"><span>SUBTOTAL COM DESCONTO</span><b>R$ ${BR(produtos)}</b></div>`
+      :`<div class="r sub"><span>SUBTOTAL PRODUTOS</span><b>R$ ${BR(produtos)}</b></div>`}
       <div class="r"><span>ST</span><b>R$ ${BR(R.st)}</b></div>
-      <div class="r"><span>IPI</span><b>R$ ${BR(R.ipi)}</b></div>
+      ${comIpi?'':`<div class="r"><span>IPI</span><b>R$ ${BR(R.ipi)}</b></div>`}
       <div class="r"><span>NF-e (VALOR R$)</span><b>R$ ${BR(R.nfe)}</b></div>
       <div class="fin"><span>TOTAL FINAL</span><b>R$ ${BR(R.fatura ?? D.totalFinal)}</b></div>
     </div>
@@ -1170,16 +1228,19 @@ $('#abaCom').onclick = ()=>abrirAba('com');
 $('#abaSem').onclick = ()=>abrirAba('sem');
 
 function conferencia(D){
+  /* Este card confere o que veio do sistema, então mostra os valores-base (sem o IPI
+     embutido nos produtos, que é coisa do documento) e o IPI na linha dele. */
   const R=D.resumo;
-  const cheio=(R.produtos!=null&&R.desconto!=null)?R.produtos+R.desconto:D.somaCheio;
+  const cheio=(R.produtos!=null&&R.desconto!=null)?R.produtos+R.desconto
+             :Math.round((D.somaBase+D.somaBaseDesc)*100)/100;
   $('#resumoCard').hidden=false;
   $('#conf').innerHTML = `
     <div class="kv"><span>Orçamento nº</span><b>${v(D.numero)}</b></div>
     <div class="kv"><span>Cliente</span><b>${v(D.cliente.razao)}</b></div>
     <div class="kv"><span>Itens</span><b>${D.itens.length}</b></div>
     <div class="kv"><span>Valor cheio</span><b>R$ ${BR(cheio)}</b></div>
-    <div class="kv"><span>Desconto</span><b style="color:var(--vinho-claro)">− R$ ${BR(R.desconto??D.somaDesconto)}</b></div>
-    <div class="kv"><span>Produtos c/ desconto</span><b>R$ ${BR(R.produtos??D.somaFinal)}</b></div>
+    <div class="kv"><span>Desconto</span><b style="color:var(--vinho-claro)">− R$ ${BR(R.desconto??D.somaBaseDesc)}</b></div>
+    <div class="kv"><span>Produtos c/ desconto</span><b>R$ ${BR(R.produtos??D.somaBase)}</b></div>
     <div class="kv"><span>IPI</span><b>R$ ${BR(R.ipi)}</b></div>
     <div class="kv big"><span>Total final</span><b>R$ ${BR(R.fatura??D.totalFinal)}</b></div>
     <div class="kv"><span>Documento</span><b>${LAYOUT.paginas} página${LAYOUT.paginas>1?'s':''}${
