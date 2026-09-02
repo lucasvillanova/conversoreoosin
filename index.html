@@ -260,6 +260,13 @@ table.prod td.cod{font-weight:600}
 table.prod td.desc{color:#4A3C3B}
 table.prod td.fin{font-weight:700}
 table.prod td.dsc{color:var(--vinho-claro)}
+/* foto do produto: quadro fixo, foto inteira dentro dele — nada do produto é
+   cortado (as fotos do sistema vêm em pé e deitadas). Produto sem foto no
+   sistema fica com o quadro vazio. */
+table.prod td.foto{padding:1.2mm 1.3mm}
+table.prod .quadro{width:20mm;height:20mm;border:.3mm solid var(--linha);border-radius:1mm;
+                   background:#fff;overflow:hidden}
+table.prod .quadro img{width:100%;height:100%;object-fit:contain;display:block}
 table.prod tfoot td{padding:1.8mm 1.3mm;font-size:6.6pt;font-weight:700;border-top:.4mm solid var(--vinho)}
 table.prod tfoot td.r{text-align:right;white-space:nowrap}
 
@@ -519,8 +526,11 @@ function byLabels(text, labels){
     URL.createObjectURL(new Blob([arr],{type:'text/javascript'}));
 })();
 
-async function readItems(buffer){
-  const doc = await pdfjsLib.getDocument({data:buffer}).promise;
+/* O pdf.js transfere o buffer para o worker, então o PDF é aberto UMA vez só e o
+   mesmo documento serve para o texto e para as fotos. */
+const abrirPDF = buffer => pdfjsLib.getDocument({data:buffer}).promise;
+
+async function readItems(doc){
   const all = [];
   let offset = 0;
   for(let p=1; p<=doc.numPages; p++){
@@ -535,6 +545,59 @@ async function readItems(buffer){
     offset += vp.height;
   }
   return all;
+}
+
+/* ------------------------------------------------------------
+   Fotos dos produtos — o PDF do sistema já as traz embutidas
+   ------------------------------------------------------------
+   A posição sai da pilha de transformações do próprio PDF (a imagem ocupa o
+   quadrado unitário transformado pela matriz corrente); o bitmap já está em
+   `page.objs` assim que a lista de operadores resolve, sem precisar renderizar
+   a página — `page.render()` trava nesta versão do pdf.js.                    */
+const mulM = (a,b) => [a[0]*b[0]+a[2]*b[1], a[1]*b[0]+a[3]*b[1],
+                       a[0]*b[2]+a[2]*b[3], a[1]*b[2]+a[3]*b[3],
+                       a[0]*b[4]+a[2]*b[5]+a[4], a[1]*b[4]+a[3]*b[5]+a[5]];
+
+async function readFotos(doc){
+  const OPS = pdfjsLib.OPS, fotos = [];
+  let offset = 0;
+  for(let p=1; p<=doc.numPages; p++){
+    const page = await doc.getPage(p);
+    const vp   = page.getViewport({scale:1});
+    const ol   = await page.getOperatorList();
+    const cache = new Map();
+    let ctm = vp.transform.slice(); const pilha = [];
+    for(let i=0; i<ol.fnArray.length; i++){
+      const fn = ol.fnArray[i], ar = ol.argsArray[i];
+      if(fn===OPS.save) pilha.push(ctm.slice());
+      else if(fn===OPS.restore) ctm = pilha.pop() || ctm;
+      else if(fn===OPS.transform) ctm = mulM(ctm, ar);
+      else if(fn===OPS.paintImageXObject){
+        const id = ar[0];
+        if(!cache.has(id)) cache.set(id, paraDataURL(page, id));
+        const url = cache.get(id);
+        if(!url) continue;
+        const xs=[ctm[4], ctm[0]+ctm[4], ctm[2]+ctm[4], ctm[0]+ctm[2]+ctm[4]];
+        const ys=[ctm[5], ctm[1]+ctm[5], ctm[3]+ctm[5], ctm[1]+ctm[3]+ctm[5]];
+        fotos.push({ url, page:p, x:Math.min(...xs),
+                     top: offset+Math.min(...ys), base: offset+Math.max(...ys) });
+      }
+    }
+    offset += vp.height;
+  }
+  return fotos;
+}
+/** bitmap do pdf.js -> data URI (nada é redimensionado: fica na resolução do sistema) */
+function paraDataURL(page, id){
+  if(!page.objs.has(id)) return null;
+  const o = page.objs.get(id);
+  if(!o || !(o.bitmap || o.data) || !o.width || !o.height) return null;
+  const c = document.createElement('canvas');
+  c.width = o.width; c.height = o.height;
+  const cx = c.getContext('2d');
+  if(o.bitmap) cx.drawImage(o.bitmap, 0, 0);
+  else { const img = cx.createImageData(o.width, o.height); img.data.set(o.data); cx.putImageData(img, 0, 0); }
+  try{ return c.toDataURL('image/jpeg', 0.9); }catch(e){ return null; }
 }
 /** agrupa itens em linhas (tolerância vertical) */
 function toLines(items, tol=2.6){
@@ -556,9 +619,10 @@ const join     = (line,x0,x1) => line.items.filter(i=>i.x>=x0 && i.x<x1).map(i=>
 /* ------------------------------------------------------------
    Parser principal: PDF -> objeto de dados (sem inventar nada)
    ------------------------------------------------------------ */
-function parseQuote(items){
+function parseQuote(items, fotos){
   const L = toLines(items);
   const warn = [], miss = [];
+  const fotosLivres = (fotos||[]).slice();
   const D = { empresa:{}, cliente:{}, transporte:{}, resumo:{}, itens:[] };
 
   /* ---- cabeçalho / empresa ---------------------------------- */
@@ -746,13 +810,19 @@ function parseQuote(items){
       });
     });
 
+    /* A foto do item é a que fica na coluna de fotos (à esquerda do código) e cuja
+       faixa vertical contém a linha principal deste item. Produto sem foto no
+       sistema não recebe nenhuma — sai o quadro vazio, nada é inventado. */
+    const iFoto = fotosLivres.findIndex(f => f.x < B.cod && f.top <= m.top && f.base >= m.top);
+    const foto = iFoto >= 0 ? fotosLivres.splice(iFoto,1)[0].url : null;
+
     D.itens.push({
       n: idx+1,
       codigo: codParts.join('').replace(/\s+/g,'') || null,
       descricao: descParts.join(' ').replace(/\s+/g,' ').trim() || null,
       entrega: ent, qtde: qtd, un: un,
       precoFinalUn: val.preco ?? null, descPct: val.desc ?? 0,
-      totalFinal: val.total ?? null, ipi: val.ipi ?? null
+      totalFinal: val.total ?? null, ipi: val.ipi ?? null, foto
     });
   });
 
@@ -860,9 +930,15 @@ function render(D){
      desconto. Sem desconto, o documento volta ao layout enxuto do modelo original. */
   const temDesc = it.some(i=>(i.descPct||0)>0) || (R.desconto||0)>0;
 
+  /* A coluna de fotos só existe se o PDF do sistema trouxe alguma: arquivo sem foto
+     nenhuma (formato antigo) gera exatamente o documento de sempre. */
+  const temFoto = it.some(i=>i.foto);
+
   const linhas = it.map(i=>`
       <tr>
-        <td class="c">${i.n}</td>
+        <td class="c">${i.n}</td>${temFoto?`
+        <td class="foto"><div class="quadro">${
+          i.foto ? `<img src="${i.foto}" alt="${esc(i.codigo||'')}">` : ''}</div></td>`:''}
         <td class="cod">${v(i.codigo)}</td>
         <td class="desc">${v(i.descricao)}</td>
         <td class="c">${v(i.entrega)}</td>
@@ -976,14 +1052,14 @@ function render(D){
     <div class="sec-t"><i class="ic">${IC.sofa}</i><h3>PRODUTOS</h3><i class="rule"></i></div>
     <table class="prod">
       <colgroup>
-        <col style="width:5mm"><col style="width:18mm"><col><col style="width:13mm">
+        <col style="width:5mm">${temFoto?'<col style="width:22.6mm">':''}<col style="width:18mm"><col><col style="width:13mm">
         <col style="width:12mm">${temDesc?`<col style="width:19mm"><col style="width:20mm">
         <col style="width:9mm"><col style="width:19mm"><col style="width:21mm">`
         :`<col style="width:24mm"><col style="width:26mm">`}
       </colgroup>
       <thead>
         <tr>
-          <th class="c">#</th><th>CÓDIGO</th><th>DESCRIÇÃO</th><th class="c">DATA DE<br>ENTREGA</th>
+          <th class="c">#</th>${temFoto?'<th></th>':''}<th>CÓDIGO</th><th>DESCRIÇÃO</th><th class="c">DATA DE<br>ENTREGA</th>
           <th class="c">QTDE UN.</th>
           <th class="r">PREÇO UN.<br>${temDesc?'CHEIO ':''}(R$)</th>${temDesc?`
           <th class="r">VALOR CHEIO<br>(R$)</th><th class="c">DESC.<br>(%)</th>
@@ -994,7 +1070,7 @@ function render(D){
       <tbody>${linhas}</tbody>
       <tfoot>
         <tr>
-          <td colspan="4" class="r">TOTAL:</td>
+          <td colspan="${temFoto?5:4}" class="r">TOTAL:</td>
           <td class="c">${D.somaQtde?BR(D.somaQtde,0):'—'} ${esc(D.totUn||'')}</td>
           <td></td>${temDesc?`
           <td class="r">${BR(D.somaCheio)}</td>
@@ -1066,7 +1142,11 @@ const PASSOS  = [1,.97,.94,.91,.88,.85,.82,.79,.76];
 function paginar(doc){
   const inner = doc.querySelector('.doc-inner');
   doc.classList.remove('multi');
-  for(const k of PASSOS){
+  /* Com fotos o encaixe em uma página tem piso: espremer até 76% deixaria a foto
+     com 15mm. Abaixo do piso o documento vai para duas páginas — o cliente
+     preferiu duas páginas a foto pequena (02/09/2026). */
+  const passos = doc.querySelector('td.foto') ? PASSOS.filter(k=>k>=.88) : PASSOS;
+  for(const k of passos){
     inner.style.transform = 'none';
     inner.style.width     = (FOLHA_L/k)+'px';
     inner.style.minHeight = '0px';
@@ -1115,8 +1195,10 @@ async function ler(f, alvo){
   if(!/\.pdf$/i.test(f.name)){ alvo.innerHTML = msg('err','Envie um arquivo <b>.pdf</b> exportado do sistema.'); return null; }
   alvo.innerHTML = msg('warn',`Lendo <b>${esc(f.name)}</b>…`);
   try{
-    const items = await readItems(new Uint8Array(await f.arrayBuffer()));
-    return parseQuote(items);
+    const doc   = await abrirPDF(new Uint8Array(await f.arrayBuffer()));
+    const items = await readItems(doc);
+    const fotos = await readFotos(doc);
+    return parseQuote(items, fotos);
   }catch(err){
     console.error(err);
     alvo.innerHTML = msg('err',`Não consegui ler o PDF: ${esc(err.message)}`);
