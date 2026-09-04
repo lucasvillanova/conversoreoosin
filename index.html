@@ -730,13 +730,15 @@ function parseQuote(items, fotos){
     const at = re => { const i=hdr.items.find(i=>re.test(i.s)); return i?i.x:null; };
     const above = L.filter(l=>l.top>hdr.top-12 && l.top<hdr.top+12).flatMap(l=>l.items);
     const px = re => { const i=above.find(i=>re.test(i.s)); return i?i.x:null; };
+    /* O rótulo de uma coluna vem inteiro na linha do cabeçalho ("Desc. (%)",
+       "IPI (R$)", "Data de entrega") OU quebrado nas linhas de cima e de baixo
+       ("Desc." + "(%)"). O sistema faz os dois, às vezes no mesmo arquivo, então
+       toda coluna é procurada nas duas — sempre pelo começo do texto. */
+    const col = re => at(re) ?? px(re);
     const c = {
-      hash:at(/^#$/)??14, cod:at(/^Código/i), desc:at(/^Descrição/i),
-      ent:px(/^Data de$/i)??px(/^Data/i), qtd:at(/^Qtde/i), un:at(/^Un\.?$/i),
-      pre:at(/^Preço/i), dsc:px(/^Desc\.$/i), tot:at(/^Total/i),
-      // "IPI (R$)" pode vir inteiro na linha do cabeçalho ou quebrado em
-      // "IPI" + "(R$)" nas linhas de cima e de baixo — o sistema faz os dois
-      ipi:at(/^IPI\b/i) ?? px(/^IPI$/i)
+      hash:col(/^#$/)??14, cod:col(/^Código/i), desc:col(/^Descrição/i),
+      ent:col(/^Data\b/i), qtd:col(/^Qtde/i), un:col(/^Un\.?$/i),
+      pre:col(/^Preço/i), dsc:col(/^Desc\./i), tot:col(/^Total/i), ipi:col(/^IPI\b/i)
     };
     const mid=(a,b)=>(a!=null&&b!=null)?(a+b)/2:null;
     B = {
@@ -811,7 +813,16 @@ function parseQuote(items, fotos){
         else if(i.x < B.ent)  descParts.push(i.s);
         else if(i.x < B.qtd){ if(i.s!=='-') ent = (ent?ent+' ':'')+i.s; }
         else if(i.x < B.un){  if(l===m) qtd = num(i.s); }
-        else if(i.x < B.pre){ if(l===m) un  = i.s; }
+        else if(i.x < B.pre){                          // coluna "Un."
+          if(l!==m) return;
+          /* "PC 19.495,3536": unidade e preço colados num item só. A unidade é o
+             que não é número; os números seguem para as colunas da direita, a
+             partir do preço. (nums() só casa valor com vírgula decimal, então
+             uma unidade como "UN." nunca é confundida com número.) */
+          un = i.s.split(/\s+/).filter(t=>!/^[\d.,]+$/.test(t)).join(' ') || un;
+          let k = 0;
+          nums(i.s).forEach(n=>{ if(COLS[k] && val[COLS[k].k]==null) val[COLS[k].k]=n; k++; });
+        }
         else if(l===m){
           let k = COLS.reduce((acc,cl,ix)=> i.x>=cl.x ? ix : acc, 0);
           nums(i.s).forEach(n=>{ if(COLS[k] && val[COLS[k].k]==null) val[COLS[k].k]=n; k++; });
