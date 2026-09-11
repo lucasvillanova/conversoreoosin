@@ -432,8 +432,8 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
       <div class="card" style="margin-top:14px">
         <h2><i class="n" id="nGerar">3</i> Gerar documento</h2>
         <div class="campo wide" style="margin-bottom:12px">
-          <label for="fColab">Colaborador (opcional)</label>
-          <input id="fColab" type="text" autocomplete="off"
+          <label for="fRepCli">Representante (opcional)</label>
+          <input id="fRepCli" type="text" autocomplete="off"
                  placeholder="Arquiteto ou empresa que representa o cliente">
         </div>
         <button class="btn btn-primary" id="btnPdf" disabled>
@@ -441,7 +441,7 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
           Baixar PDF
         </button>
         <div class="hint">
-          <b>Colaborador</b> aparece no cabeçalho, abaixo do representante — em branco, a linha
+          <b>Representante</b> aparece no cabeçalho, abaixo do vendedor — em branco, a linha
           não sai no documento.<br>
           <b>Baixar PDF</b> gera o arquivo direto (A4).
         </div>
@@ -661,14 +661,16 @@ function parseQuote(items, fotos){
   D.empresa.email = he['E-mail:']; D.empresa.fone = he['Telefone:'];
   D.empresa.endereco = cep(hl.slice(lastLbl+1).map(o=>o.left).join(' ')
         .replace(/\s+/g,' ').trim()) || null;
-  // representante (coluna direita, abaixo do rótulo)
+  /* Vendedor — o sistema chama esse campo de "Representante:" no PDF, mas no
+     documento da casa ele sai como VENDEDOR. Não confunda com
+     D.representanteCliente, que é digitado no painel e sai como REPRESENTANTE. */
   const lRep = findLine(L,/Representante:/);
   if(lRep){
     const after = L.filter(l=>l.top>lRep.top-1 && l.top<lRep.top+22);
     let rep = after.map(l=>join(l,XR,9999)).join(' ').replace(/Representante:/i,'').trim();
-    D.representante = dedup(rep) || null;
+    D.vendedor = dedup(rep) || null;
   }
-  if(!D.representante) miss.push('Representante');
+  if(!D.vendedor) miss.push('Vendedor');
 
   /* ---- âncoras de seção ------------------------------------- */
   const tCli = (findLine(L,/^CLIENTE$/i)||{}).top;
@@ -1048,8 +1050,8 @@ function render(D){
       <div class="t">ORÇAMENTO</div>
       <div class="mbox">
         <div class="l">${IC.cal}<span>DATA: ${v(D.data)}${D.hora?' '+esc(D.hora):''}</span></div>
-        <div class="q"><em>REPRESENTANTE</em><b>${v(D.representante)}</b></div>${D.colaborador?`
-        <div class="q"><em>COLABORADOR</em><b>${esc(D.colaborador)}</b></div>`:''}
+        <div class="q"><em>VENDEDOR</em><b>${v(D.vendedor)}</b></div>${D.representanteCliente?`
+        <div class="q"><em>REPRESENTANTE</em><b>${esc(D.representanteCliente)}</b></div>`:''}
       </div>
       <div class="val">${esc(VALIDADE)}</div>
     </div>
@@ -1280,16 +1282,16 @@ async function handleSem(f){
 /* desenha o documento a partir do que já está em DATA (sem remexer no painel) */
 function redesenhar(){
   if(!DATA) return;
-  DATA.colaborador = $('#fColab').value.trim() || null;
+  DATA.representanteCliente = $('#fRepCli').value.trim() || null;
   scaler.innerHTML = render(DATA);
   $('#empty')?.remove();
   LAYOUT = paginar(scaler.firstElementChild);
   fit();
 }
-/* o colaborador é digitado aqui, não vem do PDF: redesenha enquanto se digita.
-   Espera 200ms para não remontar o documento a cada tecla. */
-let tColab = null;
-$('#fColab').oninput = ()=>{ clearTimeout(tColab); tColab = setTimeout(redesenhar, 200); };
+/* o representante do cliente é digitado aqui, não vem do PDF: redesenha enquanto
+   se digita. Espera 200ms para não remontar o documento a cada tecla. */
+let tRepCli = null;
+$('#fRepCli').oninput = ()=>{ clearTimeout(tRepCli); tRepCli = setTimeout(redesenhar, 200); };
 
 /* monta o documento e atualiza o painel (usado pelas duas abas) */
 function converter(D, alvo, nomeArq){
@@ -1357,7 +1359,7 @@ function limparSaida(){
   PENDENTE=null;
   $('#btnConverter').disabled=true;
   status.innerHTML=''; status2.innerHTML='';
-  file.value=''; file2.value=''; $('#fColab').value='';
+  file.value=''; file2.value=''; $('#fRepCli').value='';
 }
 function abrirAba(nome){
   document.querySelectorAll('.aba').forEach(b=>b.classList.toggle('on', b.dataset.aba===nome));
