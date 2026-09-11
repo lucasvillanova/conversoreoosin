@@ -267,7 +267,10 @@ table.prod tbody td{border-bottom:.3mm solid var(--linha);padding:1.2mm 1.3mm;ve
 table.prod tbody tr.par td{background:var(--off)}
 table.prod td.r{text-align:right;white-space:nowrap}
 table.prod td.c{text-align:center}
-table.prod td.cod{font-weight:600}
+/* código sem espaço não tem onde quebrar e vaza por cima da descrição
+   (`A506B4/T506CR/A506E/T506C-L` mede 140px numa coluna de 68px). `anywhere`
+   só quebra quando não cabe — código curto continua numa linha só. */
+table.prod td.cod{font-weight:600;overflow-wrap:anywhere}
 table.prod td.desc{color:#4A3C3B}
 table.prod td.fin{font-weight:700}
 table.prod td.dsc{color:var(--vinho-claro)}
@@ -378,7 +381,7 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
           <h2><i class="n">2</i> Dados do cliente</h2>
           <div class="form">
             <div class="campo wide">
-              <label for="fRazao">Razão Social / Nome</label>
+              <label for="fRazao">Nome</label>
               <input id="fRazao" type="text" autocomplete="off" placeholder="Nome do cliente">
             </div>
             <div class="campo">
@@ -428,11 +431,18 @@ table.prod tfoot td.r{text-align:right;white-space:nowrap}
 
       <div class="card" style="margin-top:14px">
         <h2><i class="n" id="nGerar">3</i> Gerar documento</h2>
+        <div class="campo wide" style="margin-bottom:12px">
+          <label for="fColab">Colaborador (opcional)</label>
+          <input id="fColab" type="text" autocomplete="off"
+                 placeholder="Arquiteto ou empresa que representa o cliente">
+        </div>
         <button class="btn btn-primary" id="btnPdf" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Baixar PDF
         </button>
         <div class="hint">
+          <b>Colaborador</b> aparece no cabeçalho, abaixo do representante — em branco, a linha
+          não sai no documento.<br>
           <b>Baixar PDF</b> gera o arquivo direto (A4).
         </div>
       </div>
@@ -691,13 +701,18 @@ function parseQuote(items, fotos){
     };
   } else miss.push('Bloco TRANSPORTE');
 
-  /* ---- resumo (rótulos e valores casados por posição) -------- */
+  /* ---- resumo (rótulos e valores casados por posição) --------
+     A linha de valores é a PRIMEIRA linha só de números depois do título, e os
+     rótulos são só o que está ACIMA dela. Varrer o bloco inteiro até PRODUTOS
+     engole qualquer seção que o sistema ponha no meio — o pedido_64 trouxe uma
+     "CONDIÇÃO DE PROPOSTA" ali, e os rótulos dela se agrupavam com os do RESUMO,
+     jogando o valor do IPI na coluna do ST e o Total da fatura no Desconto. */
   if(tRes!=null && tPro!=null){
     const blk = between(L,tRes,tPro);
-    const valLine = [...blk].reverse().find(l=>l.items.length>1 &&
+    const valLine = blk.find(l=>l.items.length>1 &&
                     l.items.every(i=>/^R?\$?\s*-?[\d.]+,\d{2}$/.test(i.s.trim())));
     if(valLine){
-      const labelItems = blk.filter(l=>l!==valLine).flatMap(l=>l.items).sort((a,b)=>a.x-b.x);
+      const labelItems = blk.filter(l=>l.top < valLine.top).flatMap(l=>l.items).sort((a,b)=>a.x-b.x);
       const groups=[];
       labelItems.forEach(i=>{
         const g=groups[groups.length-1];
@@ -897,9 +912,17 @@ function parseQuote(items, fotos){
     warn.push(`Desconto calculado (${BR(D.somaBaseDesc)}) ≠ Desconto do RESUMO (${BR(D.resumo.desconto)}).`);
   if(D.temIpiPorItem && D.resumo.ipi!=null && !near(D.somaIpi,D.resumo.ipi,0.05))
     warn.push(`Soma do IPI dos itens (${BR(D.somaIpi)}) ≠ IPI do RESUMO (${BR(D.resumo.ipi)}).`);
-  const somaFatura = (D.resumo.produtos??0)+(D.resumo.st??0)+(D.resumo.ipi??0);
+  /* Frete, seguro e outras despesas do bloco TRANSPORTE entram na fatura: no
+     pedido_64, Produtos + IPI + R$ 1.500,00 de frete dão exatamente o Total da
+     fatura. Sem eles a conferência acusava divergência em todo orçamento com
+     frete — e todos os arquivos de teste anteriores tinham frete zero. */
+  D.desp = {frete:  num(D.transporte.frete)  || 0,
+            seguro: num(D.transporte.seguro) || 0,
+            outras: num(D.transporte.outras) || 0};
+  D.despesas = D.desp.frete + D.desp.seguro + D.desp.outras;
+  const somaFatura = (D.resumo.produtos??0)+(D.resumo.st??0)+(D.resumo.ipi??0)+D.despesas;
   if(D.resumo.fatura!=null && !near(somaFatura,D.resumo.fatura,0.05))
-    warn.push(`Produtos + ST + IPI (${BR(somaFatura)}) ≠ Total da fatura (${BR(D.resumo.fatura)}).`);
+    warn.push(`Produtos + ST + IPI${D.despesas?' + despesas':''} (${BR(somaFatura)}) ≠ Total da fatura (${BR(D.resumo.fatura)}).`);
   if(D.totalFinal!=null && D.resumo.fatura!=null && !near(D.totalFinal,D.resumo.fatura,0.05))
     warn.push(`TOTAL FINAL (${BR(D.totalFinal)}) ≠ Total da fatura do RESUMO (${BR(D.resumo.fatura)}).`);
   D.itens.forEach(it=>{
@@ -981,6 +1004,11 @@ function render(D){
   const cheio    = comIpi ? D.somaCheio
         : ((R.produtos!=null && R.desconto!=null) ? R.produtos+R.desconto : D.somaCheio);
   const desconto = comIpi ? D.somaDesconto : (R.desconto ?? D.somaDesconto);
+  /* Frete, seguro e outras despesas entram na fatura mas não estão no RESUMO do
+     sistema. Sem linha própria, o documento não fecha: no pedido_64 o cliente lia
+     produtos 49.641,98 e pagava 51.141,98. Cada despesa só aparece quando existe —
+     orçamento com frete zero sai exatamente como antes. */
+  const desp = D.desp || {frete:0, seguro:0, outras:0};
   const rc = (lab,val,cls='') => `<div class="rc ${cls}"><em>${lab}</em><b>${val!=null?BR(val):'—'}</b></div>`;
   const cards = [
     temDesc ? rc('PRODUTOS<br>VALOR CHEIO (R$)', cheio) : '',
@@ -988,9 +1016,13 @@ function render(D){
     rc(temDesc?'PRODUTOS<br>COM DESCONTO (R$)':'PRODUTOS<br>(VALOR R$)', produtos),
     rc('ST<br>(R$)', R.st),
     comIpi ? '' : rc('IPI<br>(R$)', R.ipi),
+    desp.frete ? rc('FRETE<br>(R$)', desp.frete) : '',
     rc('NF-e<br>(VALOR R$)', R.nfe),
     rc('TOTAL A PAGAR<br>(R$)', R.fatura ?? D.totalFinal, 'tot')
   ].filter(Boolean);
+  const linhaDesp = [['FRETE',desp.frete], ['SEGURO',desp.seguro], ['OUTRAS DESPESAS',desp.outras]]
+        .filter(([,v])=>v)
+        .map(([rot,v])=>`<div class="r"><span>${rot}</span><b>R$ ${BR(v)}</b></div>`).join('');
 
   const doc = `
 <div class="doc"><div class="doc-inner">
@@ -1016,7 +1048,8 @@ function render(D){
       <div class="t">ORÇAMENTO</div>
       <div class="mbox">
         <div class="l">${IC.cal}<span>DATA: ${v(D.data)}${D.hora?' '+esc(D.hora):''}</span></div>
-        <div class="q"><em>REPRESENTANTE</em><b>${v(D.representante)}</b></div>
+        <div class="q"><em>REPRESENTANTE</em><b>${v(D.representante)}</b></div>${D.colaborador?`
+        <div class="q"><em>COLABORADOR</em><b>${esc(D.colaborador)}</b></div>`:''}
       </div>
       <div class="val">${esc(VALIDADE)}</div>
     </div>
@@ -1027,7 +1060,7 @@ function render(D){
     <div class="sec-t"><i class="ic">${IC.user}</i><h3>CLIENTE</h3><i class="rule"></i></div>
     <div class="box cols2">
       <div>
-        <div class="f"><span class="k">Razão Social:</span><span class="v">${v(D.cliente.razao)}</span></div>
+        <div class="f"><span class="k">Nome:</span><span class="v">${v(D.cliente.razao)}</span></div>
         <div class="f"><span class="k">Nome Fantasia:</span><span class="v">${v(D.cliente.fantasia)}</span></div>
         <div class="f"><span class="k">Insc. Estadual:</span><span class="v">${v(D.cliente.ie)}</span></div>
         <div class="f"><span class="k">E-mail:</span><span class="v">${v(D.cliente.email)}</span></div>
@@ -1116,6 +1149,7 @@ function render(D){
       :`<div class="r sub"><span>SUBTOTAL PRODUTOS</span><b>R$ ${BR(produtos)}</b></div>`}
       <div class="r"><span>ST</span><b>R$ ${BR(R.st)}</b></div>
       ${comIpi?'':`<div class="r"><span>IPI</span><b>R$ ${BR(R.ipi)}</b></div>`}
+      ${linhaDesp}
       <div class="r"><span>NF-e (VALOR R$)</span><b>R$ ${BR(R.nfe)}</b></div>
       <div class="fin"><span>TOTAL FINAL</span><b>R$ ${BR(R.fatura ?? D.totalFinal)}</b></div>
     </div>
@@ -1243,14 +1277,25 @@ async function handleSem(f){
     status2.innerHTML += msg('err', `<b>Divergência nos números do sistema</b> — confira antes de enviar:<br>${D._avisos.map(esc).join('<br>')}`);
 }
 
+/* desenha o documento a partir do que já está em DATA (sem remexer no painel) */
+function redesenhar(){
+  if(!DATA) return;
+  DATA.colaborador = $('#fColab').value.trim() || null;
+  scaler.innerHTML = render(DATA);
+  $('#empty')?.remove();
+  LAYOUT = paginar(scaler.firstElementChild);
+  fit();
+}
+/* o colaborador é digitado aqui, não vem do PDF: redesenha enquanto se digita.
+   Espera 200ms para não remontar o documento a cada tecla. */
+let tColab = null;
+$('#fColab').oninput = ()=>{ clearTimeout(tColab); tColab = setTimeout(redesenhar, 200); };
+
 /* monta o documento e atualiza o painel (usado pelas duas abas) */
 function converter(D, alvo, nomeArq){
   try{
     DATA = D;
-    scaler.innerHTML = render(D);
-    $('#empty')?.remove();
-    LAYOUT = paginar(scaler.firstElementChild);
-    fit();
+    redesenhar();
     $('#btnPdf').disabled = $('#btnPdfMob').disabled = false;
 
     let out = msg('ok', `<b>${esc(nomeArq)}</b> convertido — ${D.itens.length} item(ns) lido(s).`);
@@ -1277,7 +1322,7 @@ function converter(D, alvo, nomeArq){
 /* ---------- aba 2: aplicar os dados digitados e converter ---------- */
 const CAMPOS = {razao:'#fRazao', fantasia:'#fFantasia', ie:'#fIE', email:'#fEmail',
                 doc:'#fDoc', fone:'#fFone', endereco:'#fEnd'};
-const ROTULOS = {razao:'Razão Social', fantasia:'Nome Fantasia', ie:'Inscrição Estadual',
+const ROTULOS = {razao:'Nome', fantasia:'Nome Fantasia', ie:'Inscrição Estadual',
                  email:'E-mail', doc:'CNPJ/CPF', fone:'Telefone', endereco:'Endereço'};
 
 $('#btnConverter').onclick = ()=>{
@@ -1312,7 +1357,7 @@ function limparSaida(){
   PENDENTE=null;
   $('#btnConverter').disabled=true;
   status.innerHTML=''; status2.innerHTML='';
-  file.value=''; file2.value='';
+  file.value=''; file2.value=''; $('#fColab').value='';
 }
 function abrirAba(nome){
   document.querySelectorAll('.aba').forEach(b=>b.classList.toggle('on', b.dataset.aba===nome));
