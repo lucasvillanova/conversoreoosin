@@ -211,7 +211,9 @@ input[type=file]{display:none}
 .dh .co li{display:flex;gap:2mm;align-items:flex-start;font-size:7pt;color:#4A3C3B}
 .dh .co li svg{width:3.2mm;height:3.2mm;flex:none;color:var(--vinho);margin-top:.3mm}
 .dh .meta{text-align:right}
-.dh .meta .t{font-size:15pt;font-weight:700;color:var(--vinho);letter-spacing:.5px;line-height:1}
+/* o título fica centrado sobre a caixa do número (que ocupa a coluna inteira);
+   o resto da coluna — data, vendedor, representante, validade — segue à direita */
+.dh .meta .t{font-size:15pt;font-weight:700;color:var(--vinho);letter-spacing:.5px;line-height:1;text-align:center}
 /* número do orçamento: caixa própria entre o título e a data, como no modelo aprovado */
 .dh .meta .num{margin-top:2.2mm;background:var(--bege);border:.35mm solid var(--linha);border-radius:1.6mm;
                padding:1.7mm 3mm;font-size:12pt;font-weight:700;color:var(--vinho);text-align:center;line-height:1}
