@@ -196,6 +196,19 @@ input[type=file]{display:none}
 .doc.multi .sec-t{break-after:avoid;page-break-after:avoid}
 .doc.multi .bottom{margin-top:4mm}
 
+/* --- cabeçalho de continuação: só existe no PDF baixado ---
+   paginarDownload insere um destes no alto de cada folha a partir da segunda,
+   para a folha solta não ficar órfã. Na pré-visualização o documento é uma tira
+   contínua, sem folhas, então ele não aparece. */
+.cab-folha .in{display:flex;align-items:baseline;gap:3mm;
+  border-bottom:.3mm solid var(--linha);padding-bottom:1.4mm}
+.cab-folha .nu{font-size:7.4pt;font-weight:700;color:var(--vinho);letter-spacing:.3px;white-space:nowrap}
+.cab-folha .cl{flex:1;min-width:0;font-size:6.3pt;color:#6B5B58;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cab-folha .pg{font-size:6.2pt;font-weight:600;color:#9A8A87;letter-spacing:.4px;white-space:nowrap}
+div.cab-folha{margin-bottom:3mm}
+tr.cab-folha>td{padding:0 0 3mm;border:0;background:#fff}
+
 /* --- cabeçalho --- */
 .dh{display:grid;grid-template-columns:48mm 1fr 44mm;gap:5mm;align-items:start;padding-bottom:2.6mm}
 .dh .brand{text-align:center}
@@ -1042,7 +1055,7 @@ function render(D){
         .map(([rot,v])=>`<div class="r"><span>${rot}</span><b>R$ ${BR(v)}</b></div>`).join('');
 
   const doc = `
-<div class="doc"><div class="doc-inner">
+<div class="doc" data-num="${v(D.numero)}" data-cliente="${esc(D.cliente.razao||'')}"><div class="doc-inner">
 
   <!-- ======= CABEÇALHO ======= -->
   <div class="dh">
@@ -1471,10 +1484,19 @@ function paginarDownload(doc, alturaPagina){
   // uma folha só: o documento já foi encaixado por paginar(), não há o que cortar
   if(doc.getBoundingClientRect().height <= alturaPagina + 1) return;
 
+  const PX = 96/25.4;
+  /* As folhas seguintes ganham as mesmas margens que a primeira já tem: 7mm no
+     topo (o padding do .doc-inner) e 5mm no pé (a folha é 297mm e o documento
+     de uma página fecha em 292mm). Sem isso o bloco empurrado encostava na
+     borda do papel e saía cortado. */
+  const MARGEM_TOPO = 7*PX, MARGEM_PE = 5*PX, UTIL = alturaPagina - MARGEM_PE;
+
   const INDIVISIVEL = 'table.prod tbody tr, table.prod tfoot tr, .sec-t, .box, .resumo, .bottom, .obs, .obsger, .foot';
   const topoDoc  = () => doc.getBoundingClientRect().top;
   const cabecalho = doc.querySelector('table.prod thead tr');
   const nCols = cabecalho ? cabecalho.children.length : 1;
+  const numero  = doc.dataset.num || '';
+  const cliente = doc.dataset.cliente || '';
 
   const espacador = (altura, comoLinha) => {
     if(!comoLinha){
@@ -1489,36 +1511,73 @@ function paginarDownload(doc, alturaPagina){
     return tr;
   };
 
-  doc.querySelectorAll(INDIVISIVEL).forEach(el=>{
-    const r = el.getBoundingClientRect();
-    if(r.height > alturaPagina) return;              // não cabe numa folha: não há o que empurrar
-    const topo = r.top - topoDoc(), base = topo + r.height - .5;
-    if(Math.floor(topo/alturaPagina) === Math.floor(base/alturaPagina)) return;
+  /* o cabeçalho de continuação — a folha solta tem de dizer de que orçamento é.
+     A contagem de páginas fica vazia aqui: só dá para preenchê-la no fim, quando
+     o documento parar de crescer. */
+  const cabFolha = comoLinha => {
+    const dentro = `<div class="in"><span class="nu">ORÇAMENTO Nº ${esc(numero)}</span>`+
+                   `<span class="cl">${esc(cliente)}</span><span class="pg"></span></div>`;
+    if(!comoLinha){
+      const d = document.createElement('div'); d.className='cab-folha'; d.innerHTML=dentro; return d;
+    }
+    const tr = document.createElement('tr'); tr.className='cab-folha';
+    tr.innerHTML = `<td colspan="${nCols}">${dentro}</td>`;
+    return tr;
+  };
 
-    // +1px: pousar exatamente em cima do corte deixa meio pixel do bloco na
-    // folha anterior, que vira um risco no pé da página
-    const sobra = alturaPagina - (topo % alturaPagina) + 1;
-    const ehLinha = el.tagName === 'TR';
-    el.parentNode.insertBefore(espacador(sobra, ehLinha), el);
-    // a tabela continua na folha nova: o cabeçalho vai junto
-    if(ehLinha && cabecalho && el.parentNode.tagName === 'TBODY'){
+  /* Abre uma folha nova com o cabeçalho de continuação em `alvo` (a posição, no
+     documento, do topo da folha somada à margem) e o bloco logo abaixo dele.
+     A altura do espaçador é conferida DEPOIS de inserido: a margem do próprio
+     bloco fica acima do espaçador e o cálculo cego erra por ela — foi assim que
+     o cabeçalho nasceu a 3,3mm da borda em vez dos 7mm. */
+  const empurrar = (el, alvo) => {
+    const ehLinha = el.tagName === 'TR', pai = el.parentNode;
+    const sp = espacador(Math.max(1, alvo - (el.getBoundingClientRect().top - topoDoc())), ehLinha);
+    pai.insertBefore(sp, el);
+    const cab = cabFolha(ehLinha);
+    pai.insertBefore(cab, el);
+    // a tabela continua na folha nova: o cabeçalho dela vai junto
+    if(ehLinha && cabecalho && pai.tagName === 'TBODY'){
       const rep = cabecalho.cloneNode(true);
       rep.className = 'repete';
-      el.parentNode.insertBefore(rep, el);
+      pai.insertBefore(rep, el);
     }
+    const caixa = ehLinha ? sp.firstElementChild : sp;   // no <tr> a altura mora no <td>
+    const erro  = alvo - (cab.getBoundingClientRect().top - topoDoc());
+    if(Math.abs(erro) > .5) caixa.style.height = (parseFloat(caixa.style.height) + erro) + 'px';
+  };
+
+  doc.querySelectorAll(INDIVISIVEL).forEach(el=>{
+    const r = el.getBoundingClientRect();
+    if(r.height > UTIL - MARGEM_TOPO) return;        // não cabe nem numa folha inteira
+    const topo  = r.top - topoDoc();
+    const folha = Math.floor(topo/alturaPagina), pos = topo - folha*alturaPagina;
+
+    if(pos + r.height > UTIL)                        // terminaria na margem do pé
+      empurrar(el, (folha+1)*alturaPagina + MARGEM_TOPO);
+    else if(folha > 0 && pos < MARGEM_TOPO)          // a folha virou sozinha, sem empurrão
+      empurrar(el, folha*alturaPagina + MARGEM_TOPO);
   });
 
-  /* O rodapé encosta no pé da última folha, como numa página só. A sobra sai da
-     altura do DOCUMENTO, não da base do rodapé: medindo pelo rodapé, o padding
-     que vem depois dele passa do corte e gera uma folha em branco no fim.
-     O meio pixel a menos é a margem contra o arredondamento do Chrome. */
+  /* O rodapé fecha a última folha à mesma distância da borda que na folha única
+     (os 5mm). A sobra sai da altura do DOCUMENTO, não da base do rodapé: medindo
+     pelo rodapé, o padding que vem depois dele passa do corte e gera uma folha em
+     branco no fim. O meio pixel a menos é a margem contra o arredondamento. */
   const rodape = doc.querySelector('.foot');
   if(rodape){
     const altura = doc.getBoundingClientRect().height;
-    const sobra  = alturaPagina - (altura % alturaPagina) - .5;
-    if(sobra > 1 && sobra < alturaPagina - 1)
-      rodape.parentNode.insertBefore(espacador(sobra, false), rodape);
+    const sobra  = alturaPagina - (altura % alturaPagina) - MARGEM_PE - .5;
+    if(sobra > 1) rodape.parentNode.insertBefore(espacador(sobra, false), rodape);
   }
+
+  /* agora que nada mais se move, numerar as folhas. Trocar o texto de .pg não
+     mexe na altura da linha (ele é a menor fonte do cabeçalho), então ninguém
+     sai do lugar. */
+  const folhas = Math.ceil(doc.getBoundingClientRect().height / alturaPagina);
+  doc.querySelectorAll('.cab-folha .pg').forEach(el=>{
+    const n = Math.floor((el.getBoundingClientRect().top - topoDoc())/alturaPagina) + 1;
+    el.textContent = `PÁGINA ${n} DE ${folhas}`;
+  });
 }
 
 /** converte cada <svg> inline em <img> data-URI (necessário para o html2canvas) */
