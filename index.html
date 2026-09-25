@@ -894,6 +894,32 @@ function parseQuote(items, fotos){
     });
   });
 
+  /* Segunda chance para foto DESENQUADRADA pelo sistema. No pedido_109, o item 6 abre a
+     página 2 e o sistema desenhou a foto no alto da linha, mas o texto logo abaixo da base
+     dela — a faixa da foto (106–180pt) não contém a linha do item (183pt), e a regra acima
+     não casa. Aqui, o item que ficou sem foto recebe a foto livre que estiver no
+     território dele: mesma página, abaixo do cabeçalho da tabela, e mais perto da linha
+     dele que da linha dos vizinhos (pelo ponto médio). Só se houver UMA candidata — com
+     duas ou mais nada é escolhido. A foto é do próprio PDF; nada é buscado nem inventado.
+     O painel avisa quais itens passaram por aqui, para conferência. */
+  D._fotoPorPosicao = [];
+  if(fotosLivres.length){
+    const pgDe = l => l.items[0].page;
+    mains.forEach((m,idx)=>{
+      const it = D.itens[idx];
+      if(it.foto) return;
+      const p = pgDe(m), ant = mains[idx-1], prox = mains[idx+1];
+      const lo = (ant && pgDe(ant)===p) ? (ant.top+m.top)/2 : (fimCab.get(p) ?? -Infinity);
+      const hi = (prox && pgDe(prox)===p) ? (prox.top+m.top)/2
+               : (lTotal && pgDe(lTotal)===p ? lTotal.top : Infinity);
+      const cand = fotosLivres.filter(f => f.x < B.cod && f.page===p &&
+                                           (f.top+f.base)/2 > lo && (f.top+f.base)/2 < hi);
+      if(cand.length !== 1) return;
+      it.foto = fotosLivres.splice(fotosLivres.indexOf(cand[0]),1)[0].url;
+      D._fotoPorPosicao.push(it.n);
+    });
+  }
+
   if(lTotal){ const n=nums(lTotal.text); D.totQtde=n[0]??null; D.totProdutos=n[n.length-1]??null;
               D.totUn=(lTotal.items.find(i=>i.x>=B.un&&i.x<B.pre)||{}).s||null; }
   if(lFinal){ D.totalFinal = num(lFinal.text.replace(/TOTAL\s+FINAL:/i,'')); }
@@ -1357,6 +1383,9 @@ function converter(D, alvo, nomeArq){
                          `limpa — totais, condições de pagamento, observações e rodapé nunca são divididos ao meio.`);
     if(D._faltando.length)
       out += msg('warn', `<b>Dados ausentes no PDF de origem</b> (mantidos em branco, nada foi estimado):<br>${D._faltando.map(esc).join(' · ')}`);
+    if(D._fotoPorPosicao?.length)
+      out += msg('warn', `<b>Foto desalinhada no PDF do sistema</b> — item ${D._fotoPorPosicao.join(', ')}: `+
+        `a foto não estava na altura da linha do item e foi associada pela posição. Confira se é a foto certa.`);
     if(D._clienteBranco && D._clienteBranco.length)
       out += msg('warn', `<b>Campos do cliente em branco</b> (sairão como “—” no documento):<br>${D._clienteBranco.map(esc).join(' · ')}`);
     if(D._avisos.length)
@@ -1594,6 +1623,54 @@ function paginarDownload(doc, alturaPagina){
   });
 }
 
+/* html2canvas quebra as linhas com as regras DELE, não com as do Chrome. No pedido_109 o
+   Chrome quebra "LUGARES-" | "915x2305x740mm-MADEIRA" (depois de hífen, antes de número),
+   o html2canvas não — ele trata "LUGARES-915x2305x740mm-MADEIRA" como uma palavra só, que
+   atravessa duas linhas, e desenha uma por cima da outra. Na tela estava certo; só o PDF
+   baixado saía sobreposto. A saída é congelar, no clone, as quebras que o próprio Chrome
+   fez: cada linha de texto que quebrou vira um trecho seguido de <br>, e o html2canvas não
+   tem mais o que decidir. Nada muda de lugar — o <br> cai exatamente onde a linha já virava.
+   Fica de fora texto filho direto de flex/grid (o <br> viraria um item a mais) e as
+   quebras que já são "\n" de um texto pre-wrap (não se duplica a linha). */
+function congelarQuebras(root){
+  /* O <br> encurta a largura "natural" do texto, e um item de flex/grid dimensionado pelo
+     conteúdo (os endereços do cabeçalho, do CLIENTE e do rodapé) encolheria junto — o texto
+     não sai do lugar, mas a caixa muda. Guarda-se a largura de cada um antes e ela é
+     devolvida no fim a quem mudou. */
+  const itensFlex = [...root.querySelectorAll('*')].filter(e =>
+        e.parentElement && /flex|grid/.test(getComputedStyle(e.parentElement).display));
+  const largura = new Map(itensFlex.map(e => [e, getComputedStyle(e).width]));
+
+  const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nos = [];
+  while(tw.nextNode()) nos.push(tw.currentNode);
+  const r = document.createRange();
+  nos.forEach(tn=>{
+    const s = tn.textContent;
+    if(!s.trim() || !tn.parentElement) return;
+    if(/flex|grid/.test(getComputedStyle(tn.parentElement).display)) return;
+    const cortes = []; let topo = null, ultimo = -1;
+    for(let i=0; i<s.length; i++){
+      if(/\s/.test(s[i])) continue;
+      r.setStart(tn,i); r.setEnd(tn,i+1);
+      const rc = r.getClientRects()[0];
+      if(!rc) continue;
+      if(topo!==null && rc.top - topo > rc.height/2 && !s.slice(ultimo+1,i).includes('\n'))
+        cortes.push(i);
+      topo = rc.top; ultimo = i;
+    }
+    // de trás para a frente: splitText deixa em `tn` a parte da esquerda
+    for(let k=cortes.length-1; k>=0; k--){
+      const direita = tn.splitText(cortes[k]);
+      tn.parentNode.insertBefore(document.createElement('br'), direita);
+    }
+  });
+
+  itensFlex.forEach(e=>{
+    const w = largura.get(e);
+    if(getComputedStyle(e).width !== w){ e.style.width = w; e.style.flex = 'none'; }
+  });
+}
+
 /** converte cada <svg> inline em <img> data-URI (necessário para o html2canvas) */
 async function svgsParaImagens(root){
   const svgs=[...root.querySelectorAll('svg')], espera=[];
@@ -1640,6 +1717,7 @@ $('#btnPdf').onclick = async ()=>{
   holder.style.cssText='position:absolute;left:0;top:0;width:210mm;background:#fff';
   holder.appendChild(clone); document.body.appendChild(holder);
   await svgsParaImagens(clone);          // html2canvas não desenha SVG inline
+  congelarQuebras(clone);                // e quebra linha diferente do Chrome
   // a folha da imagem é a largura do documento na proporção do A4 — a mesma
   // altura em que o html2pdf vai fatiar o canvas
   paginarDownload(clone, clone.offsetWidth * 297/210);
