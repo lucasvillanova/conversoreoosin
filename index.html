@@ -134,6 +134,9 @@ input[type=file]{display:none}
 .form{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .campo{display:flex;flex-direction:column;gap:3px}
 .campo.wide{grid-column:1/-1}
+.check{display:inline-flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--texto);user-select:none}
+.check input{width:16px;height:16px;margin:0;accent-color:var(--vinho);cursor:pointer}
 .campo label{font-size:10.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--texto-suave)}
 .campo input,.campo textarea{
   width:100%;padding:8px 10px;border:1px solid var(--linha);border-radius:8px;
@@ -146,6 +149,8 @@ input[type=file]{display:none}
 .form-acoes .btn-ghost{flex:0 0 96px}
 @media (max-width:980px) and (pointer:coarse){
   .campo input,.campo textarea{font-size:16px;padding:11px 12px}  /* evita zoom automático no iOS */
+  .check{font-size:15px;padding:6px 0}
+  .check input{width:22px;height:22px}
   .aba{padding:12px 10px}
 }
 
@@ -457,6 +462,9 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
 
       <div class="card" style="margin-top:14px">
         <h2><i class="n" id="nGerar">3</i> Gerar documento</h2>
+        <label class="check" for="fPedido">
+          <input id="fPedido" type="checkbox"> Pedido?
+        </label>
         <div class="campo wide" style="margin-bottom:12px">
           <label for="fRepCli">Representante (opcional)</label>
           <input id="fRepCli" type="text" autocomplete="off"
@@ -472,6 +480,8 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
           Baixar PDF
         </button>
         <div class="hint">
+          <b>Pedido?</b> marcado troca “Orçamento” por “Pedido” no documento — para o pedido
+          que a vendedora assina após o pagamento, antes da nota fiscal.<br>
           <b>Representante</b> aparece no cabeçalho, abaixo do vendedor, e <b>Observações gerais</b>
           numa caixa no fim do orçamento — em branco, nenhum dos dois sai no documento.<br>
           <b>Baixar PDF</b> gera o arquivo direto (A4).
@@ -1021,8 +1031,8 @@ const INSTAGRAM = '@eoosinbrasil';   // perfil oficial (confirmado pelo cliente 
 const VALIDADE  = 'Orçamento válido por 3 dias';   // texto fixo do cabeçalho
 /* nota das fotos: algumas fotos do cadastro mostram o conjunto, não só o item vendido.
    Sai abaixo da tabela, ligada à coluna FOTO* pelo asterisco, e só quando há foto. */
-const NOTA_FOTO = '* Imagens meramente ilustrativas, podendo mostrar o conjunto ou a composição completa da linha. '+
-  'O orçamento contempla somente os itens listados, conforme código, descrição e quantidade. '+
+const NOTA_FOTO = doc => '* Imagens meramente ilustrativas, podendo mostrar o conjunto ou a composição completa da linha. '+
+  `O ${doc} contempla somente os itens listados, conforme código, descrição e quantidade. `+
   'Cores e acabamentos podem variar em relação à foto.';
 
 /* ============================================================
@@ -1089,7 +1099,7 @@ function render(D){
         .map(([rot,v])=>`<div class="r"><span>${rot}</span><b>R$ ${BR(v)}</b></div>`).join('');
 
   const doc = `
-<div class="doc" data-num="${v(D.numero)}" data-cliente="${esc(D.cliente.razao||'')}"><div class="doc-inner">
+<div class="doc" data-tipo="${D.pedido?'PEDIDO':'ORÇAMENTO'}" data-num="${v(D.numero)}" data-cliente="${esc(D.cliente.razao||'')}"><div class="doc-inner">
 
   <!-- ======= CABEÇALHO ======= -->
   <div class="dh">
@@ -1109,14 +1119,14 @@ function render(D){
       </ul>
     </div>
     <div class="meta">
-      <div class="t">ORÇAMENTO</div>
+      <div class="t">${D.pedido?'PEDIDO':'ORÇAMENTO'}</div>
       <div class="num">Nº ${v(D.numero)}</div>
       <div class="mbox">
         <div class="l">${IC.cal}<span>DATA: ${v(D.data)}${D.hora?' '+esc(D.hora):''}</span></div>
         <div class="q"><em>VENDEDOR</em><b>${v(D.vendedor)}</b></div>${D.representanteCliente?`
         <div class="q"><em>REPRESENTANTE</em><b>${esc(D.representanteCliente)}</b></div>`:''}
       </div>
-      <div class="val">${esc(VALIDADE)}</div>
+      ${D.pedido?'':`<div class="val">${esc(VALIDADE)}</div>`}
     </div>
   </div>
 
@@ -1196,7 +1206,7 @@ function render(D){
           <td class="r dsc">−${BR(D.somaDesconto)}</td>`:''}
           <td class="r">${BR(D.somaFinal)}</td>
         </tr>${temFoto?`
-        <tr class="nota-foto cola"><td colspan="${temDesc?11:8}">${esc(NOTA_FOTO)}</td></tr>`:''}
+        <tr class="nota-foto cola"><td colspan="${temDesc?11:8}">${esc(NOTA_FOTO(D.pedido?'pedido':'orçamento'))}</td></tr>`:''}
       </tfoot>
     </table>
   </div>
@@ -1318,6 +1328,9 @@ function msg(cls, html){ return `<div class="msg msg-${cls}"><i class="dot"></i>
 async function ler(f, alvo){
   if(!/\.pdf$/i.test(f.name)){ alvo.innerHTML = msg('err','Envie um arquivo <b>.pdf</b> exportado do sistema.'); return null; }
   alvo.innerHTML = msg('warn',`Lendo <b>${esc(f.name)}</b>…`);
+  /* PDF novo é documento novo: começa sempre como orçamento. Sem isso a caixa marcada
+     para um cliente passava para o próximo arquivo e ele saía como PEDIDO sem ninguém ver. */
+  $('#fPedido').checked = false;
   try{
     const doc   = await abrirPDF(new Uint8Array(await f.arrayBuffer()));
     const items = await readItems(doc);
@@ -1354,6 +1367,7 @@ function redesenhar(){
   if(!DATA) return;
   DATA.representanteCliente = $('#fRepCli').value.trim() || null;
   DATA.observacoes          = $('#fObs').value.trim() || null;
+  DATA.pedido               = $('#fPedido').checked;
   scaler.innerHTML = render(DATA);
   $('#empty')?.remove();
   LAYOUT = paginar(scaler.firstElementChild);
@@ -1366,6 +1380,7 @@ let tDigita = null;
 const aoDigitar = ()=>{ clearTimeout(tDigita); tDigita = setTimeout(redesenhar, 200); };
 $('#fRepCli').oninput = aoDigitar;
 $('#fObs').oninput    = aoDigitar;
+$('#fPedido').onchange = redesenhar;          // caixinha: redesenha na hora
 
 /* monta o documento e atualiza o painel (usado pelas duas abas) */
 function converter(D, alvo, nomeArq){
@@ -1436,7 +1451,7 @@ function limparSaida(){
   PENDENTE=null;
   $('#btnConverter').disabled=true;
   status.innerHTML=''; status2.innerHTML='';
-  file.value=''; file2.value=''; $('#fRepCli').value=''; $('#fObs').value='';
+  file.value=''; file2.value=''; $('#fRepCli').value=''; $('#fObs').value=''; $('#fPedido').checked=false;
 }
 function abrirAba(nome){
   document.querySelectorAll('.aba').forEach(b=>b.classList.toggle('on', b.dataset.aba===nome));
@@ -1533,6 +1548,7 @@ function paginarDownload(doc, alturaPagina){
   const topoDoc  = () => doc.getBoundingClientRect().top;
   const cabecalho = doc.querySelector('table.prod thead tr');
   const nCols = cabecalho ? cabecalho.children.length : 1;
+  const tipo    = doc.dataset.tipo || 'ORÇAMENTO';
   const numero  = doc.dataset.num || '';
   const cliente = doc.dataset.cliente || '';
 
@@ -1553,7 +1569,7 @@ function paginarDownload(doc, alturaPagina){
      A contagem de páginas fica vazia aqui: só dá para preenchê-la no fim, quando
      o documento parar de crescer. */
   const cabFolha = comoLinha => {
-    const dentro = `<div class="in"><span class="nu">ORÇAMENTO Nº ${esc(numero)}</span>`+
+    const dentro = `<div class="in"><span class="nu">${esc(tipo)} Nº ${esc(numero)}</span>`+
                    `<span class="cl">${esc(cliente)}</span><span class="pg"></span></div>`;
     if(!comoLinha){
       const d = document.createElement('div'); d.className='cab-folha'; d.innerHTML=dentro; return d;
@@ -1703,7 +1719,7 @@ async function svgsParaImagens(root){
 function nomeArquivo(D){
   const cli=(D.cliente.razao||'CLIENTE').trim().split(/\s+/).slice(0,3)
             .map(w=>w.replace(/[^\wÀ-ÿ]/g,'')).filter(Boolean).join('_');
-  return `Orcamento_${cli||'CLIENTE'}.pdf`;
+  return `${D.pedido?'Pedido':'Orcamento'}_${cli||'CLIENTE'}.pdf`;
 }
 $('#btnPdfMob').onclick = ()=> $('#btnPdf').click();
 $('#btnPdf').onclick = async ()=>{
