@@ -856,7 +856,9 @@ function parseQuote(items, fotos){
   const D = { empresa:{}, cliente:{}, transporte:{}, resumo:{}, itens:[] };
 
   /* ---- cabeçalho / empresa ---------------------------------- */
-  const lNum = findLine(L,/Or[çc]amento\s*N[o°º]\.?/i);
+  /* O título do número muda com a etapa no sistema: "Orçamento No. 109" num orçamento,
+     "Venda No. 54" depois que ele vira venda (pedido_54, que já traz a NF-e emitida). */
+  const lNum = findLine(L,/(?:Or[çc]amento|Venda|Pedido)\s*N[o°º]\.?/i);
   D.numero = lNum ? (lNum.text.match(/N[o°º]\.?\s*([\w.\-\/]+)/i)||[])[1] : null;
   if(D.numero && /^\d$/.test(D.numero)) D.numero = '0'+D.numero;   // "2" -> "02", como no modelo
   const lData = findLine(L,/\bData:/);
@@ -1123,8 +1125,33 @@ function parseQuote(items, fotos){
       it.precoFinalUn = it.qtde ? Math.round(it.totalFinal/it.qtde*10000)/10000 : null;
     }
   });
+  /* O sistema exporta o desconto % com só 2 casas ("27,33"), mas o campo aceita quantas se
+     quiser — e a calculadora gera descontos como 27,3256%. Refeito com o % arredondado, o
+     valor cheio e o desconto do documento erravam (R$ 1,13 no pedido_54). Quando o desconto
+     é o MESMO em todos os itens com desconto, o exato sai do próprio PDF: o "Desconto sobre
+     total" do RESUMO é a soma exata dos descontos em R$, então
+         desconto exato = Desconto do RESUMO ÷ (soma dos totais desses itens + Desconto).
+     Três travas: (1) só entra em ação quando o % do PDF NÃO fecha com o RESUMO — arquivo com
+     desconto inteiro sai exatamente como antes; (2) todos os itens com desconto mostram o
+     mesmo %; (3) o exato, arredondado a 2 casas, dá o % que o PDF mostra. Falhou uma trava,
+     nada é trocado e a conferência 3 continua acusando a diferença. */
+  {
+    const comDesc = D.itens.filter(it => (it.descPct||0) > 0);
+    const Rd = D.resumo.desconto;
+    if(comDesc.length && Rd > 0 && comDesc.every(it => it.baseTotal != null) &&
+       new Set(comDesc.map(it => it.descPct)).size === 1){
+      const pdf = comDesc[0].descPct;
+      const base = comDesc.reduce((s,it) => s + it.baseTotal, 0);
+      const descPdf = comDesc.reduce((s,it) => s + Math.round(it.baseTotal/(1-pdf/100)*100)/100 - it.baseTotal, 0);
+      const exato = Rd / (base + Rd) * 100;
+      if(Math.abs(descPdf - Rd) > 0.05 && Math.abs(exato - pdf) <= 0.005 + 1e-9){
+        comDesc.forEach(it => it.descExato = exato);
+        D._descontoExato = { pdf, exato };
+      }
+    }
+  }
   D.itens.forEach(it=>{
-    const d = (it.descPct||0)/100;
+    const d = (it.descExato ?? it.descPct ?? 0)/100;
     if(it.totalFinal!=null && d>0 && d<1){
       it.totalCheio = Math.round(it.totalFinal/(1-d)*100)/100;
       it.precoCheioUn = it.precoFinalUn!=null ? Math.round(it.precoFinalUn/(1-d)*10000)/10000 : null;
@@ -1571,6 +1598,11 @@ function converter(D, alvo, nomeArq){
                          `limpa — totais, condições de pagamento, observações e rodapé nunca são divididos ao meio.`);
     if(D._faltando.length)
       out += msg('warn', `<b>Dados ausentes no PDF de origem</b> (mantidos em branco, nada foi estimado):<br>${D._faltando.map(esc).join(' · ')}`);
+    if(D._descontoExato)
+      out += msg('warn', `<b>Desconto com mais casas do que o PDF mostra</b>: o PDF traz `+
+        `${BR(D._descontoExato.pdf, 2)}%, mas pelo RESUMO o desconto lançado é `+
+        `${String(+D._descontoExato.exato.toFixed(6)).replace('.', ',')}%. O valor cheio e o desconto `+
+        `do documento usam o exato; no documento a coluna continua mostrando ${BR(D._descontoExato.pdf, 2)}%.`);
     if(D._fotoPorPosicao?.length)
       out += msg('warn', `<b>Foto desalinhada no PDF do sistema</b> — item ${D._fotoPorPosicao.join(', ')}: `+
         `a foto não estava na altura da linha do item e foi associada pela posição. Confira se é a foto certa.`);
@@ -2269,13 +2301,19 @@ async function carregarOrcamentoPDF(f){
     $('#cLinhas').innerHTML = '';
     const semPreco = [], semIpi = [], atuais = [];
     D.itens.forEach(it => {
-      const d = it.descPct || 0, un = it.basePrecoUn, tot = it.baseTotal;
+      /* com o desconto exato do RESUMO quando o PDF arredondou o % (pedido_54); o preço de
+         tabela é conferido pelo TOTAL do item: o preço un. que o PDF mostra é total ÷ qtde
+         (6.150,3400 no pedido_54), não preço × (1 − desconto) arredondado (6.150,3402) */
+      const d = it.descExato ?? it.descPct ?? 0, un = it.basePrecoUn, tot = it.baseTotal;
       let P = null, ipi = null;
-      if(un != null){ const p = d ? r2(un / (1 - d/100)) : un; if(Math.abs(r4(p * (1 - d/100)) - un) < 5e-5) P = p; }
+      if(un != null && tot != null){
+        const p = d ? r2(un / (1 - d/100)) : un;
+        if(Math.abs(r2(it.qtde * r4(p * (1 - d/100))) - tot) < 0.005) P = p;
+      }
       if(it.ipi != null && tot){ const t = r2(it.ipi / tot * 100); if(Math.abs(r2(tot * t / 100) - it.ipi) < 0.005) ipi = t; }
       if(P === null) semPreco.push(it.n);
       if(ipi === null) semIpi.push(it.n);
-      atuais.push({ P, q:it.qtde, ipi, d:{ D:Math.round(d * 10000), k:4 } });
+      atuais.push({ P, q:it.qtde, ipi, d: it.descExato != null ? { D:Math.round(d * 1e8), k:8 } : { D:Math.round(d * 100), k:2 } });
       novaLinha({ P: P === null ? '' : BR(P), q: it.qtde ?? 1, ipi: ipi === null ? '' : BR(ipi) });
     });
     const extras = (D.desp?.frete || 0) + (D.desp?.seguro || 0) + (D.desp?.outras || 0);
