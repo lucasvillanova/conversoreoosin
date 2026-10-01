@@ -151,8 +151,73 @@ input[type=file]{display:none}
   .campo input,.campo textarea{font-size:16px;padding:11px 12px}  /* evita zoom automático no iOS */
   .check{font-size:15px;padding:6px 0}
   .check input{width:22px;height:22px}
+  #painelCalc .calc-tab input{font-size:16px}   /* evita zoom automático no iOS (vence a regra base, que vem depois) */
+  .modo button{padding:10px 14px}
   .aba{padding:12px 10px}
 }
+
+/* ---------- calculadora de desconto ---------- */
+.grid[hidden],.barra-mobile[hidden],.calc[hidden]{display:none!important}
+#painelCalc{max-width:900px}
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+@media(max-width:980px){.calc{grid-template-columns:1fr}}
+.calc-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.campo .sub{font-size:11px;color:var(--texto-suave);line-height:1.4;margin-top:2px}
+.chips{display:flex;gap:6px;margin-top:4px}
+.chips button{font-family:inherit;font-size:11px;font-weight:600;color:var(--vinho);background:#fff;
+  border:1px solid var(--linha-forte);border-radius:20px;padding:2px 9px;cursor:pointer}
+.chips button:hover{border-color:var(--vinho);background:#FBF3F1}
+.desc-out{display:flex;align-items:center;gap:12px;background:var(--bege);border:1px solid var(--linha);
+  border-radius:12px;padding:14px 16px}
+.desc-out .pct{flex:1;font-size:30px;font-weight:700;color:var(--vinho);letter-spacing:.3px;
+  font-variant-numeric:tabular-nums}
+.desc-out .btn{width:auto;flex:none;padding:8px 14px;margin:0}
+.calc-res .ok{color:#1F6B3A;font-weight:600}
+.calc-res .aviso{color:#8A5A00;font-weight:600}
+.calc-res .erro{color:var(--vinho-claro);font-weight:600}
+.opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.opcao{border:1px solid var(--linha);border-radius:10px;padding:10px 12px;cursor:pointer;background:#fff;
+  font-family:inherit;text-align:left;color:var(--texto)}
+.opcao:hover{border-color:var(--vinho)}
+.opcao.on{border-color:var(--vinho);box-shadow:0 0 0 2px rgba(78,10,9,.12)}
+.opcao em{display:block;font-style:normal;font-size:10.5px;font-weight:600;letter-spacing:.4px;
+  text-transform:uppercase;color:var(--texto-suave)}
+.opcao b{display:block;font-size:15px;color:var(--vinho);margin-top:2px}
+.opcao span{font-size:11.5px;color:var(--texto-suave)}
+.modo{display:inline-flex;gap:4px;background:#fff;border:1px solid var(--linha);border-radius:10px;padding:4px;margin-bottom:14px}
+.modo button{font-family:inherit;font-size:12.5px;font-weight:600;color:var(--texto-suave);background:none;border:0;
+  border-radius:7px;padding:7px 14px;cursor:pointer}
+.modo button:hover{color:var(--vinho);background:var(--off)}
+.modo button.on{background:var(--vinho);color:#fff}
+#calcOrc{grid-template-columns:1.15fr 1fr}
+@media(max-width:980px){#calcOrc{grid-template-columns:1fr}}
+.links{display:flex;justify-content:space-between}
+#painelCalc:has(#calcOrc:not([hidden])){max-width:1080px}
+.ipi-todos{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--texto-suave);margin:12px 0 6px}
+.ipi-todos .chips{margin:0}
+.tab-wrap{overflow-x:auto}
+.calc-tab{width:100%;border-collapse:collapse;font-size:12px}
+.calc-tab th{font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--texto-suave);
+  text-align:left;padding:4px 4px 6px;border-bottom:1px solid var(--linha)}
+.calc-tab td{padding:4px;border-bottom:1px dashed var(--linha);vertical-align:middle}
+.calc-tab td:first-child{width:22px;color:var(--texto-suave);font-size:11px}
+.calc-tab td:last-child{width:26px;text-align:right}
+.calc-tab input{width:100%;padding:6px 8px;border:1px solid var(--linha);border-radius:7px;font-family:inherit;
+  font-size:12.5px;color:var(--texto);background:var(--off)}
+.calc-tab input:focus{outline:0;border-color:var(--vinho);background:#fff}
+.calc-tab input.falta{border-color:var(--vinho-claro);background:#FBEDEB}
+.calc-tab .q input{max-width:56px}
+.calc-tab .i input{max-width:70px}
+.calc-tab .x{border:0;background:none;color:var(--texto-suave);font-size:16px;line-height:1;cursor:pointer;padding:2px 4px}
+.calc-tab .x:hover{color:var(--vinho)}
+.link{border:0;background:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--vinho);cursor:pointer;
+  padding:8px 0 0}
+.res-tab{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
+.res-tab th{font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--texto-suave);
+  text-align:right;padding:3px 4px;border-bottom:1px solid var(--linha)}
+.res-tab th:first-child,.res-tab td:first-child{text-align:left}
+.res-tab td{padding:4px;text-align:right;border-bottom:1px dashed var(--linha);font-variant-numeric:tabular-nums}
+.res-tab tr.aj td{background:#FFF6E5;font-weight:600}
 
 /* ---------- ajustes exclusivos para toque em tela pequena ---------- */
 .barra-mobile{display:none}
@@ -376,6 +441,10 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5M9 13h6M9 17h4"/></svg>
       Orçamento sem cliente
     </button>
+    <button class="aba" data-aba="calc" id="abaCalc">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 6.5h7M9 11h.01M12 11h.01M15 11h.01M9 14.5h.01M12 14.5h.01M15 14.5h.01M9 18h.01M12 18h.01M15 18h.01"/></svg>
+      Calculadora de desconto
+    </button>
   </div>
 
   <div class="grid">
@@ -509,6 +578,109 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
         </div>
       </div>
       <div id="viewport"><div class="empty" id="empty">Nenhum orçamento carregado. Envie o PDF do sistema para ver o modelo EOOSIN aqui.</div></div>
+    </div>
+  </div>
+
+  <!-- ======= ABA 3: calculadora de desconto (não mexe no documento) ======= -->
+  <div id="painelCalc" hidden>
+    <div class="modo"><button type="button" class="on" data-modo="um">Um produto</button><button type="button" data-modo="orc">Orçamento inteiro</button></div>
+    <div class="calc" id="calcUm">
+      <div class="card">
+        <h2><i class="n">1</i> Dados do produto</h2>
+        <div class="campo" style="margin-bottom:12px">
+          <label for="cPreco">Preço do produto no sistema (R$)</label>
+          <input id="cPreco" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex.: 16.150,00">
+          <span class="sub">Preço de tabela, <b>sem desconto e sem IPI</b> — o mesmo do sistema antes do desconto.</span>
+        </div>
+        <div class="calc-2">
+          <div class="campo">
+            <label for="cQtde">Quantidade</label>
+            <input id="cQtde" type="text" inputmode="numeric" autocomplete="off" value="1">
+          </div>
+          <div class="campo">
+            <label for="cIpi">IPI do produto (%)</label>
+            <input id="cIpi" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex.: 3,25">
+            <span class="chips"><button type="button" data-ipi="3,25">3,25%</button><button type="button" data-ipi="9,75">9,75%</button></span>
+          </div>
+        </div>
+        <div class="campo" style="margin-top:12px">
+          <label for="cAlvo">Valor final desejado (R$)</label>
+          <input id="cAlvo" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex.: 13.500,00">
+          <span class="sub">O valor “redondo” combinado com o cliente: <b>total do item, já com IPI</b>.</span>
+        </div>
+      </div>
+
+      <div class="card calc-res">
+        <h2><i class="n">2</i> Desconto para lançar no sistema</h2>
+        <div class="desc-out">
+          <span class="pct" id="cPct">—</span>
+          <button type="button" class="btn btn-ghost" id="cCopiar" disabled>Copiar</button>
+        </div>
+        <div id="cMsg" class="hint" style="margin-top:6px">Preencha os quatro campos ao lado.</div>
+        <div id="cConta" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- ======= modo orçamento inteiro: o mesmo desconto em todos os produtos ======= -->
+    <div class="calc" id="calcOrc" hidden>
+      <div class="card">
+        <h2><i class="n">1</i> Produtos do orçamento</h2>
+        <button type="button" class="btn btn-ghost" id="cCarregar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Carregar do PDF do sistema
+        </button>
+        <input type="file" id="cFile" accept="application/pdf" hidden>
+        <div id="cOrcStatus"></div>
+        <div class="ipi-todos">IPI de todos: <span class="chips"><button type="button" data-ipi-todos="3,25">3,25%</button><button type="button" data-ipi-todos="9,75">9,75%</button></span></div>
+        <div class="tab-wrap">
+          <table class="calc-tab">
+            <thead><tr><th>#</th><th>Preço de tabela (R$)</th><th>Qtde</th><th>IPI (%)</th><th></th></tr></thead>
+            <tbody id="cLinhas"></tbody>
+          </table>
+        </div>
+        <div class="links"><button type="button" class="link" id="cMais">+ Adicionar produto</button>
+          <button type="button" class="link" id="cLimpar">Limpar tudo</button></div>
+        <div class="calc-2" style="margin-top:12px">
+          <div class="campo">
+            <label for="cExtras">Frete e outras despesas (R$)</label>
+            <input id="cExtras" type="text" inputmode="decimal" autocomplete="off" value="0,00">
+          </div>
+          <div class="campo">
+            <label for="cAlvoOrc">Valor total desejado (R$)</label>
+            <input id="cAlvoOrc" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex.: 500.000,00">
+          </div>
+        </div>
+        <span class="sub" style="display:block;margin-top:6px">Preço de tabela = <b>sem desconto e sem IPI</b>.
+          Valor total desejado = <b>total do orçamento com IPI e frete</b>, o que o cliente vai pagar.</span>
+      </div>
+
+      <div class="card calc-res">
+        <h2><i class="n">2</i> Desconto para lançar no sistema</h2>
+        <div class="desc-out">
+          <span class="pct" id="oPct">—</span>
+          <button type="button" class="btn btn-ghost" id="oCopiar" disabled>Copiar</button>
+        </div>
+        <div id="oMsg" class="hint" style="margin-top:6px">Carregue o PDF ou preencha os produtos ao lado.</div>
+        <div id="oConta" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2><i class="n">i</i> Como a conta é feita</h2>
+      <div class="hint" style="margin-top:0">
+        O sistema aplica o desconto no preço, arredonda o total do item em centavos e só então calcula o
+        IPI sobre esse total, também arredondado em centavos. A calculadora refaz exatamente essas contas —
+        conferidas nos 52 itens com IPI dos orçamentos de teste — e, entre os descontos de até 4 casas
+        decimais, escolhe o que fecha no valor desejado (preferindo o de menos casas).
+        Com 4 casas nem todo centavo é alcançável em produtos caros: nesse caso ela mostra o valor
+        mais próximo abaixo e acima. <b>Confira sempre o total no sistema depois de lançar.</b>
+        <br><br>
+        <b>Orçamento inteiro:</b> o mesmo desconto em todos os produtos. Com vários produtos cada 0,0001% move
+        o total pela soma de todos eles, então o mesmo desconto raramente fecha no centavo; quando não fecha,
+        um produto recebe um ajuste fino nas últimas casas (o que precisa mexer menos), e a tela diz qual.
+        Carregando o PDF, os preços de tabela são reconstruídos a partir do preço com desconto do sistema e a
+        conta é conferida contra o total do próprio PDF antes de qualquer resultado.
+      </div>
     </div>
   </div>
 </div>
@@ -1453,16 +1625,28 @@ function limparSaida(){
   status.innerHTML=''; status2.innerHTML='';
   file.value=''; file2.value=''; $('#fRepCli').value=''; $('#fObs').value=''; $('#fPedido').checked=false;
 }
+/* A calculadora não mexe no documento: ir até ela e voltar para a mesma aba mantém o
+   orçamento carregado. Entre as duas abas de orçamento a troca continua limpando tudo. */
+let abaAtual = 'com', abaDoc = 'com';
 function abrirAba(nome){
   document.querySelectorAll('.aba').forEach(b=>b.classList.toggle('on', b.dataset.aba===nome));
+  const calc = nome==='calc', voltando = abaAtual==='calc' && nome===abaDoc;
+  abaAtual = nome;
+  $('#painelCalc').hidden = !calc;
+  $('.grid').hidden = calc;
+  $('#barraMobile').hidden = calc;
+  if(calc){ $('#cPreco').focus(); return; }
   $('#painelCom').hidden = nome!=='com';
   $('#painelSem').hidden = nome!=='sem';
   $('#nConf').textContent  = nome==='sem' ? '3' : '2';
   $('#nGerar').textContent = nome==='sem' ? '4' : '3';
+  abaDoc = nome;
+  if(voltando){ if(DATA){ zoom=null; fit(); } return; }    // a pré-visualização ficou escondida: reajusta
   limparSaida();
 }
-$('#abaCom').onclick = ()=>abrirAba('com');
-$('#abaSem').onclick = ()=>abrirAba('sem');
+$('#abaCom').onclick  = ()=>abrirAba('com');
+$('#abaSem').onclick  = ()=>abrirAba('sem');
+$('#abaCalc').onclick = ()=>abrirAba('calc');
 
 function conferencia(D){
   /* Este card confere o que veio do sistema, então mostra os valores-base (sem o IPI
@@ -1714,6 +1898,403 @@ async function svgsParaImagens(root){
   });
   await Promise.all(espera);
 }
+
+/* ============================================================
+   6. CALCULADORA DE DESCONTO
+   ------------------------------------------------------------
+   As vendedoras fecham venda num valor "redondo" (R$ 13.500,00) que já inclui o IPI, mas
+   no sistema o que se lança é o % de desconto sobre o preço SEM IPI. A conta do sistema,
+   conferida nos 52 itens com IPI dos orçamentos de teste (3,25% e 9,75%), é:
+
+     preço un. com desconto = preço × (1 − desconto%)      (mostrado com 4 casas)
+     total do item          = arred2(qtde × preço un.)
+     IPI                    = arred2(total × alíquota)
+     valor final            = total + IPI
+
+   O desconto aceita até 4 casas (passo de 0,0001%). A calculadora parte do desconto exato e
+   testa os vizinhos dele nesse passo, refazendo a conta do sistema em inteiros (BigInt) —
+   em ponto flutuante, um centavo de arredondamento já trocaria a resposta. Ela não sabe se o
+   sistema guarda o preço un. com 4 casas ou com todas; por isso só dá como "exato" o
+   desconto que fecha no valor desejado NAS DUAS hipóteses.
+   ============================================================ */
+
+/** número digitado no padrão brasileiro: "13.500,00", "13500", "13500,5", "3,25", "1.500" */
+function numDigitado(s){
+  s = String(s ?? '').trim().replace(/\s|R\$|%/g,'');
+  if(!s) return null;
+  if(s.includes(',')) s = s.replace(/\./g,'').replace(',','.');
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g,'');   // "1.500" = mil e quinhentos
+  if(!/^\d+(\.\d+)?$/.test(s)) return null;
+  return parseFloat(s);
+}
+
+// arredondamento comercial (meio para cima) de a/b, em inteiros
+const divArred = (a, b) => (a * 2n + b) / (b * 2n);
+const M = 1000000n;                           // desconto em unidades de 0,0001% (20% = 200000)
+
+/** o que o sistema calcula para um desconto D (em 0,0001%): valores em centavos */
+function contaSistema(P4, q, R, D){
+  const fator  = M - BigInt(D);
+  const un4    = divArred(P4 * fator, M);                 // preço un. com 4 casas (em 0,0001 R$)
+  const totB   = divArred(BigInt(q) * un4, 100n);         // hipótese B: total a partir do un. arredondado
+  const totA   = divArred(BigInt(q) * P4 * fator, M * 100n);  // hipótese A: precisão total
+  const ipiB   = divArred(totB * R, M), ipiA = divArred(totA * R, M);
+  return { un4, tot: totB, ipi: ipiB, fin: totB + ipiB, finA: totA + ipiA };
+}
+
+/** procura o desconto. preco/alvo em R$, ipi em %, qtde inteira. */
+function calcularDesconto(preco, qtde, ipi, alvo){
+  const P4 = BigInt(Math.round(preco * 10000));           // preço em 0,0001 R$
+  const R  = BigInt(Math.round(ipi * 10000));             // alíquota: 3,25% = 32500 / 1.000.000
+  const T  = BigInt(Math.round(alvo * 100));              // alvo em centavos
+  const cheio = contaSistema(P4, qtde, R, 0);
+  if(T > cheio.fin) return { erro:'acima', cheio };
+  // desconto exato (ponto de partida): alvo = qtde × preço × (1 − d) × (1 + ipi)
+  const dExato = (1 - alvo / (qtde * preco * (1 + ipi/100))) * 1e6;
+  const centro = Math.max(0, Math.min(999999, Math.round(dExato)));
+  let exatos = [], abaixo = null, acima = null;
+  for(let D = Math.max(0, centro - 3000); D <= Math.min(999999, centro + 3000); D++){
+    const c = contaSistema(P4, qtde, R, D);
+    if(c.fin === c.finA && c.fin === T) exatos.push({D, ...c});
+    else if(c.fin === c.finA){
+      if(c.fin < T && (!abaixo || c.fin > abaixo.fin)) abaixo = {D, ...c};
+      if(c.fin > T && (!acima  || c.fin <= acima.fin)) acima  = {D, ...c};   // <=: o maior D desse valor
+    }
+  }
+  if(exatos.length){
+    // menos casas decimais primeiro (20 → 20,5 → 20,12 …), depois o mais perto do exato
+    const casas = D => D % 10000 === 0 ? 0 : D % 1000 === 0 ? 1 : D % 100 === 0 ? 2 : D % 10 === 0 ? 3 : 4;
+    exatos.sort((a,b) => casas(a.D) - casas(b.D) || Math.abs(a.D - dExato) - Math.abs(b.D - dExato));
+    return { exato: exatos[0], cheio };
+  }
+  return { abaixo, acima, cheio };
+}
+
+const fmtDesc = D => `${Math.floor(D/10000)},${String(D % 10000).padStart(4,'0')}`;
+const fmtCent = c => BR(Number(c) / 100);
+const fmtUn4  = u => BR(Number(u) / 10000, 4);
+
+function desenharCalc(){
+  const preco = numDigitado($('#cPreco').value), ipi = numDigitado($('#cIpi').value);
+  const alvo  = numDigitado($('#cAlvo').value),  qtde = numDigitado($('#cQtde').value);
+  const out = $('#cPct'), msgEl = $('#cMsg'), conta = $('#cConta'), copiar = $('#cCopiar');
+  const limpa = (texto, cls='') => {
+    out.textContent = '—'; copiar.disabled = true; conta.innerHTML = '';
+    msgEl.innerHTML = cls ? `<span class="${cls}">${texto}</span>` : texto;
+  };
+  if([preco, ipi, alvo, qtde].some(v => v === null)) return limpa('Preencha os quatro campos ao lado.');
+  if(preco <= 0 || alvo <= 0) return limpa('Preço e valor desejado precisam ser maiores que zero.', 'erro');
+  if(!Number.isInteger(qtde) || qtde < 1) return limpa('A quantidade precisa ser um número inteiro (1, 2, 3…).', 'erro');
+  if(ipi >= 100) return limpa('Confira o IPI: ele é um percentual, como 3,25.', 'erro');
+
+  const r = calcularDesconto(preco, qtde, ipi, alvo);
+  if(r.erro === 'acima')
+    return limpa(`O valor desejado é maior que o preço cheio com IPI (R$ ${fmtCent(r.cheio.fin)}). `+
+                 `Não há desconto que chegue nele.`, 'erro');
+
+  const mostrar = (op, texto, cls) => {
+    out.textContent = fmtDesc(op.D) + '%';
+    copiar.disabled = false; copiar.dataset.valor = fmtDesc(op.D); copiar.textContent = 'Copiar';
+    msgEl.innerHTML = `<span class="${cls}">${texto}</span>`;
+    conta.innerHTML =
+      `<div class="kv"><span>Preço un. com desconto</span><b>R$ ${fmtUn4(op.un4)}</b></div>`+
+      `<div class="kv"><span>Total do item sem IPI${qtde>1?` (${qtde} un.)`:''}</span><b>R$ ${fmtCent(op.tot)}</b></div>`+
+      `<div class="kv"><span>IPI (${BR(ipi, ipi % 1 ? 2 : 0)}%)</span><b>R$ ${fmtCent(op.ipi)}</b></div>`+
+      `<div class="kv big"><span>Total com IPI</span><b>R$ ${fmtCent(op.fin)}</b></div>`+
+      `<div class="hint">Sem desconto, o item sairia por R$ ${fmtCent(r.cheio.fin)} com IPI.</div>`;
+  };
+
+  if(r.exato) return mostrar(r.exato, `Fecha exatamente em R$ ${fmtCent(r.exato.fin)}.`, 'ok');
+
+  // nem todo centavo é alcançável com 4 casas: oferece o mais próximo de cada lado
+  const ops = [r.abaixo && {...r.abaixo, rot:'Abaixo do desejado'}, r.acima && {...r.acima, rot:'Acima do desejado'}]
+              .filter(Boolean);
+  if(!ops.length) return limpa('Não encontrei um desconto que chegue perto desse valor. Confira os números.', 'erro');
+  const T = BigInt(Math.round(alvo * 100));
+  const dif = op => fmtCent(op.fin > T ? op.fin - T : T - op.fin);
+  const escolher = i => {
+    mostrar(ops[i], `R$ ${fmtCent(T)} não é alcançável com 4 casas de desconto `+
+                    `(cada 0,0001% move o total em mais de 1 centavo neste produto). Escolha o mais próximo:`, 'aviso');
+    msgEl.insertAdjacentHTML('beforeend', `<div class="opcoes">${ops.map((op,k) =>
+      `<button type="button" class="opcao${k===i?' on':''}" data-k="${k}"><em>${op.rot}</em>`+
+      `<b>R$ ${fmtCent(op.fin)}</b><span>${fmtDesc(op.D)}% · diferença de R$ ${dif(op)}</span></button>`).join('')}</div>`);
+    msgEl.querySelectorAll('.opcao').forEach(b => b.onclick = () => escolher(+b.dataset.k));
+  };
+  escolher(0);
+}
+
+['#cPreco','#cQtde','#cIpi','#cAlvo'].forEach(s => $(s).addEventListener('input', desenharCalc));
+document.querySelectorAll('.chips button').forEach(b => b.onclick = () => { $('#cIpi').value = b.dataset.ipi; desenharCalc(); });
+$('#cCopiar').onclick = async () => {
+  const v = $('#cCopiar').dataset.valor;
+  try{ await navigator.clipboard.writeText(v); $('#cCopiar').textContent = 'Copiado ✓'; }
+  catch(e){ $('#cCopiar').textContent = v; }               // sem área de transferência: mostra para copiar à mão
+};
+
+/* ------------------------------------------------------------
+   Calculadora — modo ORÇAMENTO INTEIRO
+   ------------------------------------------------------------
+   O mesmo desconto em todos os produtos, para o orçamento fechar num total "redondo" (com
+   IPI e frete). O total do orçamento no sistema é a soma, item a item, da conta de
+   contaSistema() mais frete/seguro/outras despesas — a mesma soma que a conferência 4 do
+   parser confere contra o "Total da fatura".
+
+   Com vários produtos o passo de 0,0001% move o total pela soma de todos eles (num orçamento
+   de R$ 500 mil, ~R$ 0,50 por passo), então o mesmo desconto raramente fecha no centavo.
+   Quando não fecha, UM produto recebe um ajuste fino nas últimas casas — escolhido entre todos
+   o que precisa mexer menos — e o resto fica com o desconto comum. No documento o desconto sai
+   com 2 casas, então o ajuste quase sempre nem aparece para o cliente.
+
+   O total é não crescente no desconto (cada arredondamento é monótono), então as buscas são
+   binárias. Como no modo de um produto, "exato" exige as duas hipóteses de arredondamento do
+   preço un. (4 casas ou precisão total) fechando no mesmo centavo.
+   ------------------------------------------------------------ */
+const casasDe = D => D % 10000 === 0 ? 0 : D % 1000 === 0 ? 1 : D % 100 === 0 ? 2 : D % 10 === 0 ? 3 : 4;
+
+function totalOrc(itens, Ds, extras){
+  let fin = extras, finA = extras;
+  const linhas = itens.map((it,k) => {
+    const c = contaSistema(it.P4, it.q, it.R, Ds[k]);
+    fin += c.fin; finA += c.finA;
+    return c;
+  });
+  return { fin, finA, linhas };
+}
+/** primeiro D em [a,b] com f(D) <= alvo (f não crescente); b+1 se nenhum */
+function primeiroAte(f, alvo, a, b){
+  let lo = a, hi = b + 1;
+  while(lo < hi){ const m = (lo + hi) >> 1; if(f(m) <= alvo) hi = m; else lo = m + 1; }
+  return lo;
+}
+const MAXD = 999999;
+
+/** itens: [{P (R$), q, ipi (%)}]; extras e alvo em R$ */
+function calcularDescontoOrcamento(itensR, extrasR, alvoR){
+  const itens  = itensR.map(it => ({ P4:BigInt(Math.round(it.P*10000)), q:it.q, R:BigInt(Math.round(it.ipi*10000)) }));
+  const extras = BigInt(Math.round(extrasR * 100)), T = BigInt(Math.round(alvoR * 100));
+  const comum  = D => itens.map(() => D);
+  const fB     = D => totalOrc(itens, comum(D), extras).fin;
+  const cheio  = totalOrc(itens, comum(0), extras);
+  if(T > cheio.fin)  return { erro:'acima', cheio };
+  if(T < fB(MAXD))   return { erro:'abaixo', cheio };
+
+  // intervalo de descontos comuns que fecham no alvo (hipótese B): [d1, d2]
+  const d1 = primeiroAte(fB, T, 0, MAXD);
+  const d2 = primeiroAte(fB, T - 1n, 0, MAXD) - 1;
+  const pacote = Ds => ({ Ds, ...totalOrc(itens, Ds, extras) });
+  if(d1 <= d2){
+    const cand = [];
+    for(let D = d1; D <= Math.min(d2, d1 + 20000); D++) cand.push(D);
+    cand.sort((a,b) => casasDe(a) - casasDe(b) || a - b);
+    for(const D of cand){ const p = pacote(comum(D)); if(p.finA === T) return { modo:'igual', D, cheio, ...p }; }
+  }
+
+  // vizinhos mais próximos com o mesmo desconto (as duas hipóteses concordando)
+  let Da = d1 - 1, Db = d2 + 1;                                  // Da: total acima; Db: total abaixo
+  const concorda = D => { const p = totalOrc(itens, comum(D), extras); return p.fin === p.finA; };
+  while(Da >= 0 && !concorda(Da)) Da--;
+  while(Db <= MAXD && !concorda(Db)) Db++;
+
+  /* ajuste fino num produto só: os outros ficam no desconto comum. O desconto comum parte
+     dos dois vizinhos do alvo e se afasta deles de 0,0001% em 0,0001% (até 10 passos de cada
+     lado) — cada base nova dá a cada produto um novo resto a fechar. Entre as soluções exatas,
+     a escolhida é, nesta ordem: (1) a que NÃO aparece no documento — o desconto do produto
+     ajustado, com 2 casas, igual ao comum; (2) a de base mais perto do alvo; (3) a de menor
+     ajuste. Num teste de 279 ajustes, 44 apareciam no documento quando só se olhava o menor. */
+  const casas2 = D => BR(D / 10000, 2);       // o desconto como o documento escreve (mesma função)
+  let melhor = null;
+  const melhorQue = (a, b) => !b || a.vis - b.vis || a.bi - b.bi || a.dist - b.dist;
+  const bases = [];
+  for(let k = 0; k < 10; k++) bases.push(Da - k, Db + k);
+  bases.forEach((base, bi) => {
+    if(base < 0 || base > MAXD || !concorda(base)) return;
+    if(melhor && melhor.vis === 0) return;                          // já há um invisível mais perto
+    const ref = totalOrc(itens, comum(base), extras);
+    itens.forEach((it, j) => {
+      const resto = T - (ref.fin - ref.linhas[j].fin);            // o que o produto j precisa fechar
+      const fj = D => contaSistema(it.P4, it.q, it.R, D).fin;
+      const a = primeiroAte(fj, resto, 0, MAXD), b = primeiroAte(fj, resto - 1n, 0, MAXD) - 1;
+      if(a > b) return;
+      // o trecho do intervalo mais perto do desconto comum (no máximo ±1000 passos)
+      const lo = Math.max(a, Math.min(b, base) - 1000), hi = Math.min(b, Math.max(a, base) + 1000);
+      const ordem = [];
+      for(let D = lo; D <= hi; D++) ordem.push({ D, vis: casas2(D) === casas2(base) ? 0 : 1, dist: Math.abs(D - base) });
+      ordem.sort((x,y) => x.vis - y.vis || x.dist - y.dist);
+      for(const c of ordem){
+        const cand = { vis:c.vis, bi, dist:c.dist };
+        if(melhorQue(cand, melhor) >= 0 && melhor) break;          // nada daqui em diante ganha
+        const Ds = comum(base); Ds[j] = c.D;
+        const pk = pacote(Ds);
+        if(pk.fin === T && pk.finA === T){ melhor = { modo:'ajuste', D:base, j, Dj:c.D, ...cand, cheio, ...pk }; break; }
+      }
+    });
+  });
+  if(melhor) return melhor;
+
+  return { modo:'aprox', cheio,
+           acima:  Da >= 0    ? { D:Da, ...pacote(comum(Da)) } : null,
+           abaixo: Db <= MAXD ? { D:Db, ...pacote(comum(Db)) } : null };
+}
+
+/* ---------- tela do modo orçamento ---------- */
+let orcST = 0;                    // ST do PDF carregado: a calculadora não sabe recalculá-la
+function novaLinha(v = {}){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td></td>`+
+    `<td><input class="p" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" value="${v.P ?? ''}"></td>`+
+    `<td class="q"><input class="qt" type="text" inputmode="numeric" autocomplete="off" value="${v.q ?? '1'}"></td>`+
+    `<td class="i"><input class="ip" type="text" inputmode="decimal" autocomplete="off" placeholder="3,25" value="${v.ipi ?? ''}"></td>`+
+    `<td><button type="button" class="x" title="Remover produto">×</button></td>`;
+  tr.querySelectorAll('input').forEach(i => i.addEventListener('input', desenharOrc));
+  tr.querySelector('.x').onclick = () => { tr.remove(); numerarLinhas(); desenharOrc(); };
+  $('#cLinhas').appendChild(tr);
+  numerarLinhas();
+  return tr;
+}
+function numerarLinhas(){ [...$('#cLinhas').rows].forEach((tr,k) => tr.cells[0].textContent = k + 1); }
+
+function desenharOrc(){
+  const out = $('#oPct'), msgEl = $('#oMsg'), conta = $('#oConta'), copiar = $('#oCopiar');
+  const limpa = (texto, cls='') => {
+    out.textContent = '—'; copiar.disabled = true; conta.innerHTML = '';
+    msgEl.innerHTML = cls ? `<span class="${cls}">${texto}</span>` : texto;
+  };
+  const linhas = [...$('#cLinhas').rows];
+  const itens = [], incompletos = [];
+  linhas.forEach((tr, k) => {
+    const [ip, iq, ii] = tr.querySelectorAll('input');
+    const P = numDigitado(ip.value), q = numDigitado(iq.value), ipi = numDigitado(ii.value);
+    const vazia = !ip.value.trim() && !ii.value.trim();
+    ip.classList.toggle('falta', !vazia && (P === null || P <= 0));
+    ii.classList.toggle('falta', !vazia && ipi === null);
+    iq.classList.toggle('falta', !vazia && !(Number.isInteger(q) && q >= 1));
+    if(vazia) return;
+    if(P === null || P <= 0 || ipi === null || ipi >= 100 || !(Number.isInteger(q) && q >= 1)) incompletos.push(k + 1);
+    else itens.push({ P, q, ipi, n:k + 1 });
+  });
+  const extras = numDigitado($('#cExtras').value) ?? 0, alvo = numDigitado($('#cAlvoOrc').value);
+  if(orcST > 0) return limpa(`Este orçamento tem ST (R$ ${BR(orcST)}). A calculadora não sabe como o sistema `+
+                             `recalcula a ST com outro desconto, então não calcula este caso.`, 'erro');
+  if(incompletos.length) return limpa(`Complete o preço, a quantidade e o IPI do produto ${incompletos.join(', ')}.`, 'erro');
+  if(!itens.length) return limpa('Carregue o PDF ou preencha os produtos ao lado.');
+  if(alvo === null) return limpa('Digite o valor total desejado.');
+
+  const r = calcularDescontoOrcamento(itens, extras, alvo);
+  if(r.erro === 'acima')  return limpa(`O valor desejado é maior que o orçamento sem desconto (R$ ${fmtCent(r.cheio.fin)}).`, 'erro');
+  if(r.erro === 'abaixo') return limpa('O valor desejado é baixo demais: nem com 99,9999% de desconto o orçamento chega nele.', 'erro');
+
+  const T = BigInt(Math.round(alvo * 100)), extrasC = BigInt(Math.round(extras * 100));
+  const mostrar = (op, texto, cls, extra = '') => {
+    out.textContent = fmtDesc(op.D) + '%';
+    copiar.disabled = false; copiar.dataset.valor = fmtDesc(op.D); copiar.textContent = 'Copiar';
+    msgEl.innerHTML = `<span class="${cls}">${texto}</span>` + extra;
+    const semIpi = op.linhas.reduce((s,c) => s + c.tot, 0n), ipi = op.linhas.reduce((s,c) => s + c.ipi, 0n);
+    conta.innerHTML =
+      `<table class="res-tab"><thead><tr><th>#</th><th>Desconto</th><th>Sem IPI</th><th>IPI</th><th>Com IPI</th></tr></thead><tbody>`+
+      op.linhas.map((c,k) => `<tr${op.modo==='ajuste' && k===op.j ? ' class="aj"' : ''}><td>${itens[k].n}</td>`+
+        `<td>${fmtDesc(op.Ds[k])}%</td><td>${fmtCent(c.tot)}</td><td>${fmtCent(c.ipi)}</td><td>${fmtCent(c.fin)}</td></tr>`).join('')+
+      `</tbody></table>`+
+      `<div class="kv"><span>Produtos sem IPI</span><b>R$ ${fmtCent(semIpi)}</b></div>`+
+      `<div class="kv"><span>IPI</span><b>R$ ${fmtCent(ipi)}</b></div>`+
+      (extrasC ? `<div class="kv"><span>Frete e outras despesas</span><b>R$ ${fmtCent(extrasC)}</b></div>` : '')+
+      `<div class="kv big"><span>Total do orçamento</span><b>R$ ${fmtCent(op.fin)}</b></div>`+
+      `<div class="hint">Sem desconto, o orçamento sairia por R$ ${fmtCent(r.cheio.fin)}.</div>`;
+  };
+
+  if(r.modo === 'igual')
+    return mostrar(r, `Fecha exatamente em R$ ${fmtCent(r.fin)} com o mesmo desconto em todos os produtos.`, 'ok');
+  if(r.modo === 'ajuste')
+    return mostrar(r, `Fecha exatamente em R$ ${fmtCent(r.fin)}: lance <b>${fmtDesc(r.D)}%</b> em todos os produtos, `+
+                      `<b>exceto no produto ${itens[r.j].n}, que leva ${fmtDesc(r.Dj)}%</b>. `+
+                      `Com o mesmo desconto em todos o total não fecha no centavo.`+
+                      (r.vis ? ` <span class="aviso">No documento esse produto vai aparecer com `+
+                               `${BR(r.Dj/10000, 2)}% e os outros com ${BR(r.D/10000, 2)}%.</span>` :
+                               ` No documento todos aparecem com ${BR(r.D/10000, 2)}%.`), 'ok');
+
+  const ops = [r.abaixo && {...r.abaixo, rot:'Abaixo do desejado'}, r.acima && {...r.acima, rot:'Acima do desejado'}].filter(Boolean);
+  const dif = op => fmtCent(op.fin > T ? op.fin - T : T - op.fin);
+  const escolher = i => {
+    mostrar(ops[i], `R$ ${fmtCent(T)} não é alcançável, nem com ajuste fino em um produto. Escolha o mais próximo:`, 'aviso',
+      `<div class="opcoes">${ops.map((op,k) => `<button type="button" class="opcao${k===i?' on':''}" data-k="${k}"><em>${op.rot}</em>`+
+        `<b>R$ ${fmtCent(op.fin)}</b><span>${fmtDesc(op.D)}% · diferença de R$ ${dif(op)}</span></button>`).join('')}</div>`);
+    msgEl.querySelectorAll('.opcao').forEach(b => b.onclick = () => escolher(+b.dataset.k));
+  };
+  escolher(0);
+}
+
+/* carregar do PDF: o PDF traz o preço JÁ com o desconto atual; o de tabela é reconstruído
+   (o de 2 casas que, com o desconto do PDF, reproduz o preço do sistema) e a alíquota sai de
+   IPI ÷ total do item. O que não se reconstrói exatamente fica em branco — nada é chutado.
+   E a conta da calculadora é conferida contra o "Total da fatura" do próprio PDF. */
+async function carregarOrcamentoPDF(f){
+  const st = $('#cOrcStatus');
+  st.innerHTML = msg('warn', `Lendo <b>${esc(f.name)}</b>…`);
+  try{
+    const doc = await abrirPDF(new Uint8Array(await f.arrayBuffer()));
+    const D = parseQuote(await readItems(doc), []);
+    if(!D.itens.length) throw new Error('nenhum produto encontrado no PDF');
+    const r2 = x => Math.round(x * 100) / 100, r4 = x => Math.round(x * 10000) / 10000;
+    $('#cLinhas').innerHTML = '';
+    const semPreco = [], semIpi = [], atuais = [];
+    D.itens.forEach(it => {
+      const d = it.descPct || 0, un = it.basePrecoUn, tot = it.baseTotal;
+      let P = null, ipi = null;
+      if(un != null){ const p = d ? r2(un / (1 - d/100)) : un; if(Math.abs(r4(p * (1 - d/100)) - un) < 5e-5) P = p; }
+      if(it.ipi != null && tot){ const t = r2(it.ipi / tot * 100); if(Math.abs(r2(tot * t / 100) - it.ipi) < 0.005) ipi = t; }
+      if(P === null) semPreco.push(it.n);
+      if(ipi === null) semIpi.push(it.n);
+      atuais.push({ P, q:it.qtde, ipi, D:Math.round(d * 10000) });
+      novaLinha({ P: P === null ? '' : BR(P), q: it.qtde ?? 1, ipi: ipi === null ? '' : BR(ipi) });
+    });
+    const extras = (D.desp?.frete || 0) + (D.desp?.seguro || 0) + (D.desp?.outras || 0);
+    $('#cExtras').value = BR(extras);
+    orcST = D.resumo?.st || 0;
+
+    let html = msg('ok', `<b>Orçamento nº ${esc(D.numero || '—')}</b>: ${D.itens.length} produto(s) carregado(s).`);
+    if(semPreco.length) html += msg('err', `Não consegui reconstruir o preço de tabela do produto ${semPreco.join(', ')} — digite-o.`);
+    if(semIpi.length)   html += msg('err', `O PDF não traz o IPI do produto ${semIpi.join(', ')} — digite a alíquota.`);
+    // a conta da calculadora reproduz o total atual do sistema?
+    if(!semPreco.length && !semIpi.length && D.resumo?.fatura != null){
+      const itensB = atuais.map(a => ({ P4:BigInt(Math.round(a.P*10000)), q:a.q, R:BigInt(Math.round(a.ipi*10000)) }));
+      const t = totalOrc(itensB, atuais.map(a => a.D), BigInt(Math.round(extras*100)));
+      const fat = BigInt(Math.round(D.resumo.fatura * 100));
+      html += t.fin === fat
+        ? msg('ok', `Conferido: com os descontos atuais a conta da calculadora dá R$ ${fmtCent(t.fin)}, igual ao total do PDF.`)
+        : msg('err', `A conta da calculadora com os descontos atuais dá R$ ${fmtCent(t.fin)}, mas o PDF diz `+
+                     `R$ ${BR(D.resumo.fatura)}. Não confie no resultado deste orçamento — confira os produtos.`);
+    }
+    if(orcST > 0) html += msg('err', `Este orçamento tem ST (R$ ${BR(orcST)}): a calculadora não trabalha com ST.`);
+    st.innerHTML = html;
+  }catch(err){
+    st.innerHTML = msg('err', `Não consegui ler o PDF: ${esc(err.message)}`);
+  }
+  desenharOrc();
+}
+
+$('#cCarregar').onclick = () => $('#cFile').click();
+$('#cFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if(f) carregarOrcamentoPDF(f); };
+$('#cMais').onclick = () => { novaLinha().querySelector('input').focus(); };
+$('#cLimpar').onclick = () => {
+  $('#cLinhas').innerHTML = ''; novaLinha(); orcST = 0;
+  $('#cExtras').value = '0,00'; $('#cAlvoOrc').value = ''; $('#cOrcStatus').innerHTML = '';
+  desenharOrc();
+};
+['#cExtras','#cAlvoOrc'].forEach(s => $(s).addEventListener('input', desenharOrc));
+document.querySelectorAll('[data-ipi-todos]').forEach(b => b.onclick = () => {
+  [...$('#cLinhas').rows].forEach(tr => tr.querySelector('.ip').value = b.dataset.ipiTodos);
+  desenharOrc();
+});
+$('#oCopiar').onclick = async () => {
+  const v = $('#oCopiar').dataset.valor;
+  try{ await navigator.clipboard.writeText(v); $('#oCopiar').textContent = 'Copiado ✓'; }
+  catch(e){ $('#oCopiar').textContent = v; }
+};
+document.querySelectorAll('.modo button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.modo button').forEach(x => x.classList.toggle('on', x === b));
+  $('#calcUm').hidden  = b.dataset.modo !== 'um';
+  $('#calcOrc').hidden = b.dataset.modo !== 'orc';
+});
+novaLinha();
 
 /* exportação */
 function nomeArquivo(D){
