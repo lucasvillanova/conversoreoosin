@@ -158,11 +158,11 @@ input[type=file]{display:none}
 
 /* ---------- calculadora de desconto ---------- */
 .grid[hidden],.barra-mobile[hidden],.calc[hidden]{display:none!important}
-#painelCalc{max-width:900px}
+#painelCalc{max-width:900px;margin:0 auto}          /* centrado sob as abas */
 .calc{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
 @media(max-width:980px){.calc{grid-template-columns:1fr}}
 .calc-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.campo .sub{font-size:11px;color:var(--texto-suave);line-height:1.4;margin-top:2px}
+.campo .sub,.calc .sub{font-size:11px;color:var(--texto-suave);line-height:1.4;margin-top:2px}
 .chips{display:flex;gap:6px;margin-top:4px}
 .chips button{font-family:inherit;font-size:11px;font-weight:600;color:var(--vinho);background:#fff;
   border:1px solid var(--linha-forte);border-radius:20px;padding:2px 9px;cursor:pointer}
@@ -184,7 +184,7 @@ input[type=file]{display:none}
   text-transform:uppercase;color:var(--texto-suave)}
 .opcao b{display:block;font-size:15px;color:var(--vinho);margin-top:2px}
 .opcao span{font-size:11.5px;color:var(--texto-suave)}
-.modo{display:inline-flex;gap:4px;background:#fff;border:1px solid var(--linha);border-radius:10px;padding:4px;margin-bottom:14px}
+.modo{display:flex;width:fit-content;margin-left:auto;margin-right:auto;gap:4px;background:#fff;border:1px solid var(--linha);border-radius:10px;padding:4px;margin-bottom:14px}
 .modo button{font-family:inherit;font-size:12.5px;font-weight:600;color:var(--texto-suave);background:none;border:0;
   border-radius:7px;padding:7px 14px;cursor:pointer}
 .modo button:hover{color:var(--vinho);background:var(--off)}
@@ -670,14 +670,15 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
       <div class="hint" style="margin-top:0">
         O sistema aplica o desconto no preço, arredonda o total do item em centavos e só então calcula o
         IPI sobre esse total, também arredondado em centavos. A calculadora refaz exatamente essas contas —
-        conferidas nos 52 itens com IPI dos orçamentos de teste — e, entre os descontos de até 4 casas
-        decimais, escolhe o que fecha no valor desejado (preferindo o de menos casas).
-        Com 4 casas nem todo centavo é alcançável em produtos caros: nesse caso ela mostra o valor
-        mais próximo abaixo e acima. <b>Confira sempre o total no sistema depois de lançar.</b>
+        conferidas nos 52 itens com IPI dos orçamentos de teste — e procura o desconto que fecha no valor
+        desejado com o <b>menor número de casas decimais</b> possível (o sistema aceita quantas forem).
+        O único limite é o próprio arredondamento do IPI: às vezes um centavo a mais sem IPI vira dois
+        centavos a mais com IPI, e o total pula aquele valor. Nesse caso ela mostra o mais próximo abaixo
+        e acima. <b>Confira sempre o total no sistema depois de lançar.</b>
         <br><br>
-        <b>Orçamento inteiro:</b> o mesmo desconto em todos os produtos. Com vários produtos cada 0,0001% move
-        o total pela soma de todos eles, então o mesmo desconto raramente fecha no centavo; quando não fecha,
-        um produto recebe um ajuste fino nas últimas casas (o que precisa mexer menos), e a tela diz qual.
+        <b>Orçamento inteiro:</b> o mesmo desconto em todos os produtos, com o menor número de casas que fecha
+        no centavo. Se o arredondamento do IPI de vários produtos pular o valor mesmo assim, um produto recebe
+        um ajuste fino nas últimas casas, e a tela diz qual.
         Carregando o PDF, os preços de tabela são reconstruídos a partir do preço com desconto do sistema e a
         conta é conferida contra o total do próprio PDF antes de qualquer resultado.
       </div>
@@ -1911,11 +1912,20 @@ async function svgsParaImagens(root){
      IPI                    = arred2(total × alíquota)
      valor final            = total + IPI
 
-   O desconto aceita até 4 casas (passo de 0,0001%). A calculadora parte do desconto exato e
-   testa os vizinhos dele nesse passo, refazendo a conta do sistema em inteiros (BigInt) —
-   em ponto flutuante, um centavo de arredondamento já trocaria a resposta. Ela não sabe se o
-   sistema guarda o preço un. com 4 casas ou com todas; por isso só dá como "exato" o
-   desconto que fecha no valor desejado NAS DUAS hipóteses.
+   O campo de desconto do sistema NÃO tem limite de casas (descoberto em 01/10/2026 — antes a
+   calculadora parava em 4). Ela procura o desconto exato com o MENOR número de casas que
+   fecha no centavo: 0 casas, depois 1, 2… até MAX_CASAS. Um desconto com k casas é guardado
+   como inteiro D, e a fração aplicada é (10^(k+2) − D) / 10^(k+2) — 20% com 4 casas é
+   D = 200000 sobre 1.000.000. Toda a conta do sistema é refeita em inteiros (BigInt): em ponto
+   flutuante, um centavo de arredondamento já trocaria a resposta.
+
+   O que sobra de "não alcançável" vem do próprio sistema, não do desconto: o IPI arredondado
+   em centavos faz o total pular alguns centavos (um centavo a mais no total sem IPI vira dois
+   no total com IPI de vez em quando), e nenhum desconto cai neles.
+
+   A calculadora não sabe se o sistema guarda o preço un. com 4 casas (hipótese B) ou com
+   todas (A); só dá como "exato" o desconto que fecha no valor desejado NAS DUAS. O total é não
+   crescente no desconto (cada arredondamento é monótono), então as buscas são binárias.
    ============================================================ */
 
 /** número digitado no padrão brasileiro: "13.500,00", "13500", "13500,5", "3,25", "1.500" */
@@ -1928,51 +1938,74 @@ function numDigitado(s){
   return parseFloat(s);
 }
 
+const MAX_CASAS = 10;                         // 10 casas: o preço un. (4 casas) já não muda mais
+const escala = k => 10n ** BigInt(k + 2);     // desconto com k casas: D / escala = fração do preço
+const maxD   = k => Number(escala(k)) - 1;    // 99,99…% (100% não é desconto)
 // arredondamento comercial (meio para cima) de a/b, em inteiros
 const divArred = (a, b) => (a * 2n + b) / (b * 2n);
-const M = 1000000n;                           // desconto em unidades de 0,0001% (20% = 200000)
 
-/** o que o sistema calcula para um desconto D (em 0,0001%): valores em centavos */
-function contaSistema(P4, q, R, D){
-  const fator  = M - BigInt(D);
-  const un4    = divArred(P4 * fator, M);                 // preço un. com 4 casas (em 0,0001 R$)
-  const totB   = divArred(BigInt(q) * un4, 100n);         // hipótese B: total a partir do un. arredondado
-  const totA   = divArred(BigInt(q) * P4 * fator, M * 100n);  // hipótese A: precisão total
-  const ipiB   = divArred(totB * R, M), ipiA = divArred(totA * R, M);
+/** o que o sistema calcula para o desconto d = {D, k}: valores em centavos */
+function contaSistema(P4, q, R, d){
+  const M = escala(d.k), fator = M - BigInt(d.D);
+  const un4  = divArred(P4 * fator, M);                   // preço un. com 4 casas (em 0,0001 R$)
+  const totB = divArred(BigInt(q) * un4, 100n);           // hipótese B: total a partir do un. arredondado
+  const totA = divArred(BigInt(q) * P4 * fator, M * 100n);  // hipótese A: precisão total
+  const ipiB = divArred(totB * R, 1000000n), ipiA = divArred(totA * R, 1000000n);
   return { un4, tot: totB, ipi: ipiB, fin: totB + ipiB, finA: totA + ipiA };
 }
 
-/** procura o desconto. preco/alvo em R$, ipi em %, qtde inteira. */
+/** primeiro D em [a,b] com f(D) <= alvo (f não crescente); b+1 se nenhum */
+function primeiroAte(f, alvo, a, b){
+  let lo = a, hi = b + 1;
+  while(lo < hi){ const m = Math.floor((lo + hi) / 2); if(f(m) <= alvo) hi = m; else lo = m + 1; }
+  return lo;
+}
+/** descontos (com k casas) em que f fecha exatamente no alvo: [d1, d2] (vazio se d1 > d2) */
+const intervalo = (f, T, k) => [primeiroAte(f, T, 0, maxD(k)), primeiroAte(f, T - 1n, 0, maxD(k)) - 1];
+/** varre o intervalo do meio para as pontas (o meio é o mais longe dos arredondamentos) */
+function doMeio(d1, d2, ok, limite = 2000){
+  const meio = Math.floor((d1 + d2) / 2);
+  for(let i = 0; i <= limite; i++){
+    for(const D of i ? [meio - i, meio + i] : [meio]) if(D >= d1 && D <= d2 && ok(D)) return D;
+    if(meio - i < d1 && meio + i > d2) break;
+  }
+  return null;
+}
+
+/** "20", "19,0399", "23,64730918" — o desconto com as casas que ele tem, sem zeros no fim */
+function fmtDesc(d){
+  const s = String(d.D).padStart(d.k + 1, '0');
+  const int = s.slice(0, s.length - d.k), dec = s.slice(s.length - d.k).replace(/0+$/, '');
+  return dec ? `${int},${dec}` : int;
+}
+const desc2  = d => BR(d.D / 10 ** d.k, 2);   // o desconto como o documento escreve (mesma função BR)
+const fmtCent = c => BR(Number(c) / 100);
+const fmtUn4  = u => BR(Number(u) / 10000, 4);
+
+/** procura o desconto de um produto. preco/alvo em R$, ipi em %, qtde inteira. */
 function calcularDesconto(preco, qtde, ipi, alvo){
   const P4 = BigInt(Math.round(preco * 10000));           // preço em 0,0001 R$
   const R  = BigInt(Math.round(ipi * 10000));             // alíquota: 3,25% = 32500 / 1.000.000
   const T  = BigInt(Math.round(alvo * 100));              // alvo em centavos
-  const cheio = contaSistema(P4, qtde, R, 0);
+  const cheio = contaSistema(P4, qtde, R, {D:0, k:0});
   if(T > cheio.fin) return { erro:'acima', cheio };
-  // desconto exato (ponto de partida): alvo = qtde × preço × (1 − d) × (1 + ipi)
-  const dExato = (1 - alvo / (qtde * preco * (1 + ipi/100))) * 1e6;
-  const centro = Math.max(0, Math.min(999999, Math.round(dExato)));
-  let exatos = [], abaixo = null, acima = null;
-  for(let D = Math.max(0, centro - 3000); D <= Math.min(999999, centro + 3000); D++){
-    const c = contaSistema(P4, qtde, R, D);
-    if(c.fin === c.finA && c.fin === T) exatos.push({D, ...c});
-    else if(c.fin === c.finA){
-      if(c.fin < T && (!abaixo || c.fin > abaixo.fin)) abaixo = {D, ...c};
-      if(c.fin > T && (!acima  || c.fin <= acima.fin)) acima  = {D, ...c};   // <=: o maior D desse valor
-    }
+  const conta = d => contaSistema(P4, qtde, R, d);
+  for(let k = 0; k <= MAX_CASAS; k++){
+    const [d1, d2] = intervalo(D => conta({D, k}).fin, T, k);
+    if(d1 > d2) continue;
+    const D = doMeio(d1, d2, D => conta({D, k}).finA === T);
+    if(D !== null) return { exato: { d:{D, k}, ...conta({D, k}) }, cheio };
   }
-  if(exatos.length){
-    // menos casas decimais primeiro (20 → 20,5 → 20,12 …), depois o mais perto do exato
-    const casas = D => D % 10000 === 0 ? 0 : D % 1000 === 0 ? 1 : D % 100 === 0 ? 2 : D % 10 === 0 ? 3 : 4;
-    exatos.sort((a,b) => casas(a.D) - casas(b.D) || Math.abs(a.D - dExato) - Math.abs(b.D - dExato));
-    return { exato: exatos[0], cheio };
-  }
-  return { abaixo, acima, cheio };
+  // nem com MAX_CASAS: o arredondamento do IPI pula esse centavo — o mais próximo de cada lado
+  const k = MAX_CASAS, [d1, d2] = intervalo(D => conta({D, k}).fin, T, k);
+  const concorda = D => { const c = conta({D, k}); return c.fin === c.finA; };
+  let Da = d1 - 1, Db = d2 + 1;
+  while(Da >= 0 && !concorda(Da)) Da--;
+  while(Db <= maxD(k) && !concorda(Db)) Db++;
+  return { cheio,
+           acima:  Da >= 0       ? { d:{D:Da, k}, ...conta({D:Da, k}) } : null,
+           abaixo: Db <= maxD(k) ? { d:{D:Db, k}, ...conta({D:Db, k}) } : null };
 }
-
-const fmtDesc = D => `${Math.floor(D/10000)},${String(D % 10000).padStart(4,'0')}`;
-const fmtCent = c => BR(Number(c) / 100);
-const fmtUn4  = u => BR(Number(u) / 10000, 4);
 
 function desenharCalc(){
   const preco = numDigitado($('#cPreco').value), ipi = numDigitado($('#cIpi').value);
@@ -1993,8 +2026,8 @@ function desenharCalc(){
                  `Não há desconto que chegue nele.`, 'erro');
 
   const mostrar = (op, texto, cls) => {
-    out.textContent = fmtDesc(op.D) + '%';
-    copiar.disabled = false; copiar.dataset.valor = fmtDesc(op.D); copiar.textContent = 'Copiar';
+    out.textContent = fmtDesc(op.d) + '%';
+    copiar.disabled = false; copiar.dataset.valor = fmtDesc(op.d); copiar.textContent = 'Copiar';
     msgEl.innerHTML = `<span class="${cls}">${texto}</span>`;
     conta.innerHTML =
       `<div class="kv"><span>Preço un. com desconto</span><b>R$ ${fmtUn4(op.un4)}</b></div>`+
@@ -2006,25 +2039,25 @@ function desenharCalc(){
 
   if(r.exato) return mostrar(r.exato, `Fecha exatamente em R$ ${fmtCent(r.exato.fin)}.`, 'ok');
 
-  // nem todo centavo é alcançável com 4 casas: oferece o mais próximo de cada lado
+  // o arredondamento do IPI pula esse centavo: oferece o mais próximo de cada lado
   const ops = [r.abaixo && {...r.abaixo, rot:'Abaixo do desejado'}, r.acima && {...r.acima, rot:'Acima do desejado'}]
               .filter(Boolean);
   if(!ops.length) return limpa('Não encontrei um desconto que chegue perto desse valor. Confira os números.', 'erro');
   const T = BigInt(Math.round(alvo * 100));
   const dif = op => fmtCent(op.fin > T ? op.fin - T : T - op.fin);
   const escolher = i => {
-    mostrar(ops[i], `R$ ${fmtCent(T)} não é alcançável com 4 casas de desconto `+
-                    `(cada 0,0001% move o total em mais de 1 centavo neste produto). Escolha o mais próximo:`, 'aviso');
+    mostrar(ops[i], `Nenhum desconto chega em R$ ${fmtCent(T)}: o sistema arredonda o IPI em centavos e, `+
+                    `neste produto, o total pula esse valor. Escolha o mais próximo:`, 'aviso');
     msgEl.insertAdjacentHTML('beforeend', `<div class="opcoes">${ops.map((op,k) =>
       `<button type="button" class="opcao${k===i?' on':''}" data-k="${k}"><em>${op.rot}</em>`+
-      `<b>R$ ${fmtCent(op.fin)}</b><span>${fmtDesc(op.D)}% · diferença de R$ ${dif(op)}</span></button>`).join('')}</div>`);
+      `<b>R$ ${fmtCent(op.fin)}</b><span>${fmtDesc(op.d)}% · diferença de R$ ${dif(op)}</span></button>`).join('')}</div>`);
     msgEl.querySelectorAll('.opcao').forEach(b => b.onclick = () => escolher(+b.dataset.k));
   };
   escolher(0);
 }
 
 ['#cPreco','#cQtde','#cIpi','#cAlvo'].forEach(s => $(s).addEventListener('input', desenharCalc));
-document.querySelectorAll('.chips button').forEach(b => b.onclick = () => { $('#cIpi').value = b.dataset.ipi; desenharCalc(); });
+document.querySelectorAll('.chips button[data-ipi]').forEach(b => b.onclick = () => { $('#cIpi').value = b.dataset.ipi; desenharCalc(); });
 $('#cCopiar').onclick = async () => {
   const v = $('#cCopiar').dataset.valor;
   try{ await navigator.clipboard.writeText(v); $('#cCopiar').textContent = 'Copiado ✓'; }
@@ -2039,105 +2072,104 @@ $('#cCopiar').onclick = async () => {
    contaSistema() mais frete/seguro/outras despesas — a mesma soma que a conferência 4 do
    parser confere contra o "Total da fatura".
 
-   Com vários produtos o passo de 0,0001% move o total pela soma de todos eles (num orçamento
-   de R$ 500 mil, ~R$ 0,50 por passo), então o mesmo desconto raramente fecha no centavo.
-   Quando não fecha, UM produto recebe um ajuste fino nas últimas casas — escolhido entre todos
-   o que precisa mexer menos — e o resto fica com o desconto comum. No documento o desconto sai
-   com 2 casas, então o ajuste quase sempre nem aparece para o cliente.
-
-   O total é não crescente no desconto (cada arredondamento é monótono), então as buscas são
-   binárias. Como no modo de um produto, "exato" exige as duas hipóteses de arredondamento do
-   preço un. (4 casas ou precisão total) fechando no mesmo centavo.
+   1. o mesmo desconto em todos, com o menor número de casas que fecha no centavo;
+   2. se nem com MAX_CASAS o mesmo desconto fecha (o IPI arredondado de vários produtos pode
+      pular o centavo), UM produto recebe um ajuste fino e o resto fica com um desconto comum
+      de 4 casas. Entre as soluções: (a) a que NÃO aparece no documento (2 casas iguais às do
+      comum); (b) a de desconto comum mais perto do alvo; (c) a de menos casas no ajuste;
+      (d) a de menor ajuste;
+   3. se nem assim, o mais próximo abaixo e acima com o mesmo desconto.
    ------------------------------------------------------------ */
-const casasDe = D => D % 10000 === 0 ? 0 : D % 1000 === 0 ? 1 : D % 100 === 0 ? 2 : D % 10 === 0 ? 3 : 4;
-
-function totalOrc(itens, Ds, extras){
+function totalOrc(itens, ds, extras){
   let fin = extras, finA = extras;
-  const linhas = itens.map((it,k) => {
-    const c = contaSistema(it.P4, it.q, it.R, Ds[k]);
+  const linhas = itens.map((it, j) => {
+    const c = contaSistema(it.P4, it.q, it.R, ds[j]);
     fin += c.fin; finA += c.finA;
     return c;
   });
   return { fin, finA, linhas };
 }
-/** primeiro D em [a,b] com f(D) <= alvo (f não crescente); b+1 se nenhum */
-function primeiroAte(f, alvo, a, b){
-  let lo = a, hi = b + 1;
-  while(lo < hi){ const m = (lo + hi) >> 1; if(f(m) <= alvo) hi = m; else lo = m + 1; }
-  return lo;
-}
-const MAXD = 999999;
 
 /** itens: [{P (R$), q, ipi (%)}]; extras e alvo em R$ */
 function calcularDescontoOrcamento(itensR, extrasR, alvoR){
   const itens  = itensR.map(it => ({ P4:BigInt(Math.round(it.P*10000)), q:it.q, R:BigInt(Math.round(it.ipi*10000)) }));
   const extras = BigInt(Math.round(extrasR * 100)), T = BigInt(Math.round(alvoR * 100));
-  const comum  = D => itens.map(() => D);
-  const fB     = D => totalOrc(itens, comum(D), extras).fin;
-  const cheio  = totalOrc(itens, comum(0), extras);
-  if(T > cheio.fin)  return { erro:'acima', cheio };
-  if(T < fB(MAXD))   return { erro:'abaixo', cheio };
+  const comum  = d => itens.map(() => d);
+  const total  = ds => totalOrc(itens, ds, extras);
+  const pacote = ds => ({ ds, ...total(ds) });
+  const cheio  = total(comum({D:0, k:0}));
+  if(T > cheio.fin) return { erro:'acima', cheio };
+  if(T < total(comum({D:maxD(MAX_CASAS), k:MAX_CASAS})).fin) return { erro:'abaixo', cheio };
 
-  // intervalo de descontos comuns que fecham no alvo (hipótese B): [d1, d2]
-  const d1 = primeiroAte(fB, T, 0, MAXD);
-  const d2 = primeiroAte(fB, T - 1n, 0, MAXD) - 1;
-  const pacote = Ds => ({ Ds, ...totalOrc(itens, Ds, extras) });
-  if(d1 <= d2){
-    const cand = [];
-    for(let D = d1; D <= Math.min(d2, d1 + 20000); D++) cand.push(D);
-    cand.sort((a,b) => casasDe(a) - casasDe(b) || a - b);
-    for(const D of cand){ const p = pacote(comum(D)); if(p.finA === T) return { modo:'igual', D, cheio, ...p }; }
+  // 1. o mesmo desconto em todos, com o menor número de casas
+  for(let k = 0; k <= MAX_CASAS; k++){
+    const [d1, d2] = intervalo(D => total(comum({D, k})).fin, T, k);
+    if(d1 > d2) continue;
+    const D = doMeio(d1, d2, D => total(comum({D, k})).finA === T, 300);
+    if(D !== null) return { modo:'igual', d:{D, k}, cheio, ...pacote(comum({D, k})) };
   }
 
-  // vizinhos mais próximos com o mesmo desconto (as duas hipóteses concordando)
-  let Da = d1 - 1, Db = d2 + 1;                                  // Da: total acima; Db: total abaixo
-  const concorda = D => { const p = totalOrc(itens, comum(D), extras); return p.fin === p.finA; };
+  // 2. ajuste fino num produto: base comum de 4 casas, nos vizinhos do alvo e afastando-se deles
+  const kb = 4;
+  const [b1, b2] = intervalo(D => total(comum({D, k:kb})).fin, T, kb);
+  const concorda = D => { const p = total(comum({D, k:kb})); return p.fin === p.finA; };
+  let Da = b1 - 1, Db = b2 + 1;                                  // Da: total acima; Db: total abaixo
   while(Da >= 0 && !concorda(Da)) Da--;
-  while(Db <= MAXD && !concorda(Db)) Db++;
-
-  /* ajuste fino num produto só: os outros ficam no desconto comum. O desconto comum parte
-     dos dois vizinhos do alvo e se afasta deles de 0,0001% em 0,0001% (até 10 passos de cada
-     lado) — cada base nova dá a cada produto um novo resto a fechar. Entre as soluções exatas,
-     a escolhida é, nesta ordem: (1) a que NÃO aparece no documento — o desconto do produto
-     ajustado, com 2 casas, igual ao comum; (2) a de base mais perto do alvo; (3) a de menor
-     ajuste. Num teste de 279 ajustes, 44 apareciam no documento quando só se olhava o menor. */
-  const casas2 = D => BR(D / 10000, 2);       // o desconto como o documento escreve (mesma função)
-  let melhor = null;
-  const melhorQue = (a, b) => !b || a.vis - b.vis || a.bi - b.bi || a.dist - b.dist;
+  while(Db <= maxD(kb) && !concorda(Db)) Db++;
   const bases = [];
-  for(let k = 0; k < 10; k++) bases.push(Da - k, Db + k);
-  bases.forEach((base, bi) => {
-    if(base < 0 || base > MAXD || !concorda(base)) return;
-    if(melhor && melhor.vis === 0) return;                          // já há um invisível mais perto
-    const ref = totalOrc(itens, comum(base), extras);
+  for(let i = 0; i < 10; i++) bases.push(Da - i, Db + i);
+  let melhor = null;
+  const melhorQue = (a, b) => !b || a.vis - b.vis || a.bi - b.bi || a.kj - b.kj || a.dist - b.dist;
+  bases.forEach((B, bi) => {
+    if(B < 0 || B > maxD(kb) || !concorda(B)) return;
+    if(melhor && melhor.vis === 0) return;                       // já há um invisível mais perto
+    const base = {D:B, k:kb}, ref = total(comum(base));
     itens.forEach((it, j) => {
-      const resto = T - (ref.fin - ref.linhas[j].fin);            // o que o produto j precisa fechar
-      const fj = D => contaSistema(it.P4, it.q, it.R, D).fin;
-      const a = primeiroAte(fj, resto, 0, MAXD), b = primeiroAte(fj, resto - 1n, 0, MAXD) - 1;
-      if(a > b) return;
-      // o trecho do intervalo mais perto do desconto comum (no máximo ±1000 passos)
-      const lo = Math.max(a, Math.min(b, base) - 1000), hi = Math.min(b, Math.max(a, base) + 1000);
-      const ordem = [];
-      for(let D = lo; D <= hi; D++) ordem.push({ D, vis: casas2(D) === casas2(base) ? 0 : 1, dist: Math.abs(D - base) });
-      ordem.sort((x,y) => x.vis - y.vis || x.dist - y.dist);
-      for(const c of ordem){
-        const cand = { vis:c.vis, bi, dist:c.dist };
-        if(melhorQue(cand, melhor) >= 0 && melhor) break;          // nada daqui em diante ganha
-        const Ds = comum(base); Ds[j] = c.D;
-        const pk = pacote(Ds);
-        if(pk.fin === T && pk.finA === T){ melhor = { modo:'ajuste', D:base, j, Dj:c.D, ...cand, cheio, ...pk }; break; }
+      // o que o produto j precisa fechar, nas duas hipóteses — os outros produtos não mudam,
+      // então só a conta dele é refeita a cada tentativa
+      const resto  = T - (ref.fin  - ref.linhas[j].fin);
+      const restoA = T - (ref.finA - ref.linhas[j].finA);
+      for(let kj = kb; kj <= MAX_CASAS; kj++){
+        const conta = D => contaSistema(it.P4, it.q, it.R, {D, k:kj});
+        const [a, b] = intervalo(D => conta(D).fin, resto, kj);
+        if(a > b) continue;
+        /* do ponto do intervalo mais perto do desconto comum para fora: o primeiro que fecha é o
+           de menor ajuste, e é também o mais provável de sair igual no documento (se o desconto
+           comum cai dentro do intervalo, o ajuste é zero; se não, o intervalo inteiro fica de um
+           lado só e quem está mais longe também está mais longe das 2 casas do comum) */
+        const alvoD = B * 10 ** (kj - kb), c0 = Math.min(b, Math.max(a, alvoD));
+        let dj = null;
+        for(let i = 0; i <= 1000 && dj === null; i++)
+          for(const D of i ? [c0 - i, c0 + i] : [c0])
+            if(D >= a && D <= b && conta(D).finA === restoA){ dj = {D, k:kj}; break; }
+        if(dj === null) continue;
+        const cand = { vis: desc2(dj) === desc2(base) ? 0 : 1, bi, kj, dist: Math.abs(dj.D - alvoD) / 10 ** (kj - kb) };
+        if(!melhor || melhorQue(cand, melhor) < 0){
+          const ds = comum(base); ds[j] = dj;
+          melhor = { modo:'ajuste', d:base, j, dj, ...cand, cheio, ...pacote(ds) };
+        }
+        break;                                                    // menos casas primeiro
       }
     });
   });
   if(melhor) return melhor;
 
+  // 3. o mais próximo de cada lado, com o mesmo desconto
+  const k = MAX_CASAS, [d1, d2] = intervalo(D => total(comum({D, k})).fin, T, k);
+  const concordaK = D => { const p = total(comum({D, k})); return p.fin === p.finA; };
+  let A = d1 - 1, Bx = d2 + 1;
+  while(A >= 0 && !concordaK(A)) A--;
+  while(Bx <= maxD(k) && !concordaK(Bx)) Bx++;
   return { modo:'aprox', cheio,
-           acima:  Da >= 0    ? { D:Da, ...pacote(comum(Da)) } : null,
-           abaixo: Db <= MAXD ? { D:Db, ...pacote(comum(Db)) } : null };
+           acima:  A  >= 0       ? { d:{D:A, k},  ...pacote(comum({D:A, k})) }  : null,
+           abaixo: Bx <= maxD(k) ? { d:{D:Bx, k}, ...pacote(comum({D:Bx, k})) } : null };
 }
 
 /* ---------- tela do modo orçamento ---------- */
 let orcST = 0;                    // ST do PDF carregado: a calculadora não sabe recalculá-la
+// ao digitar, espera 150ms antes de recalcular (um orçamento grande pode levar alguns décimos)
+let tOrc = null;
+const desenharOrcLogo = () => { clearTimeout(tOrc); tOrc = setTimeout(desenharOrc, 150); };
 function novaLinha(v = {}){
   const tr = document.createElement('tr');
   tr.innerHTML = `<td></td>`+
@@ -2145,7 +2177,7 @@ function novaLinha(v = {}){
     `<td class="q"><input class="qt" type="text" inputmode="numeric" autocomplete="off" value="${v.q ?? '1'}"></td>`+
     `<td class="i"><input class="ip" type="text" inputmode="decimal" autocomplete="off" placeholder="3,25" value="${v.ipi ?? ''}"></td>`+
     `<td><button type="button" class="x" title="Remover produto">×</button></td>`;
-  tr.querySelectorAll('input').forEach(i => i.addEventListener('input', desenharOrc));
+  tr.querySelectorAll('input').forEach(i => i.addEventListener('input', desenharOrcLogo));
   tr.querySelector('.x').onclick = () => { tr.remove(); numerarLinhas(); desenharOrc(); };
   $('#cLinhas').appendChild(tr);
   numerarLinhas();
@@ -2181,18 +2213,18 @@ function desenharOrc(){
 
   const r = calcularDescontoOrcamento(itens, extras, alvo);
   if(r.erro === 'acima')  return limpa(`O valor desejado é maior que o orçamento sem desconto (R$ ${fmtCent(r.cheio.fin)}).`, 'erro');
-  if(r.erro === 'abaixo') return limpa('O valor desejado é baixo demais: nem com 99,9999% de desconto o orçamento chega nele.', 'erro');
+  if(r.erro === 'abaixo') return limpa('O valor desejado é baixo demais: nem com quase 100% de desconto o orçamento chega nele.', 'erro');
 
   const T = BigInt(Math.round(alvo * 100)), extrasC = BigInt(Math.round(extras * 100));
   const mostrar = (op, texto, cls, extra = '') => {
-    out.textContent = fmtDesc(op.D) + '%';
-    copiar.disabled = false; copiar.dataset.valor = fmtDesc(op.D); copiar.textContent = 'Copiar';
+    out.textContent = fmtDesc(op.d) + '%';
+    copiar.disabled = false; copiar.dataset.valor = fmtDesc(op.d); copiar.textContent = 'Copiar';
     msgEl.innerHTML = `<span class="${cls}">${texto}</span>` + extra;
     const semIpi = op.linhas.reduce((s,c) => s + c.tot, 0n), ipi = op.linhas.reduce((s,c) => s + c.ipi, 0n);
     conta.innerHTML =
       `<table class="res-tab"><thead><tr><th>#</th><th>Desconto</th><th>Sem IPI</th><th>IPI</th><th>Com IPI</th></tr></thead><tbody>`+
-      op.linhas.map((c,k) => `<tr${op.modo==='ajuste' && k===op.j ? ' class="aj"' : ''}><td>${itens[k].n}</td>`+
-        `<td>${fmtDesc(op.Ds[k])}%</td><td>${fmtCent(c.tot)}</td><td>${fmtCent(c.ipi)}</td><td>${fmtCent(c.fin)}</td></tr>`).join('')+
+      op.linhas.map((c,j) => `<tr${op.modo==='ajuste' && j===op.j ? ' class="aj"' : ''}><td>${itens[j].n}</td>`+
+        `<td>${fmtDesc(op.ds[j])}%</td><td>${fmtCent(c.tot)}</td><td>${fmtCent(c.ipi)}</td><td>${fmtCent(c.fin)}</td></tr>`).join('')+
       `</tbody></table>`+
       `<div class="kv"><span>Produtos sem IPI</span><b>R$ ${fmtCent(semIpi)}</b></div>`+
       `<div class="kv"><span>IPI</span><b>R$ ${fmtCent(ipi)}</b></div>`+
@@ -2204,19 +2236,19 @@ function desenharOrc(){
   if(r.modo === 'igual')
     return mostrar(r, `Fecha exatamente em R$ ${fmtCent(r.fin)} com o mesmo desconto em todos os produtos.`, 'ok');
   if(r.modo === 'ajuste')
-    return mostrar(r, `Fecha exatamente em R$ ${fmtCent(r.fin)}: lance <b>${fmtDesc(r.D)}%</b> em todos os produtos, `+
-                      `<b>exceto no produto ${itens[r.j].n}, que leva ${fmtDesc(r.Dj)}%</b>. `+
+    return mostrar(r, `Fecha exatamente em R$ ${fmtCent(r.fin)}: lance <b>${fmtDesc(r.d)}%</b> em todos os produtos, `+
+                      `<b>exceto no produto ${itens[r.j].n}, que leva ${fmtDesc(r.dj)}%</b>. `+
                       `Com o mesmo desconto em todos o total não fecha no centavo.`+
                       (r.vis ? ` <span class="aviso">No documento esse produto vai aparecer com `+
-                               `${BR(r.Dj/10000, 2)}% e os outros com ${BR(r.D/10000, 2)}%.</span>` :
-                               ` No documento todos aparecem com ${BR(r.D/10000, 2)}%.`), 'ok');
+                               `${desc2(r.dj)}% e os outros com ${desc2(r.d)}%.</span>` :
+                               ` No documento todos aparecem com ${desc2(r.d)}%.`), 'ok');
 
   const ops = [r.abaixo && {...r.abaixo, rot:'Abaixo do desejado'}, r.acima && {...r.acima, rot:'Acima do desejado'}].filter(Boolean);
   const dif = op => fmtCent(op.fin > T ? op.fin - T : T - op.fin);
   const escolher = i => {
-    mostrar(ops[i], `R$ ${fmtCent(T)} não é alcançável, nem com ajuste fino em um produto. Escolha o mais próximo:`, 'aviso',
+    mostrar(ops[i], `Nenhum desconto chega em R$ ${fmtCent(T)}, nem com ajuste fino em um produto. Escolha o mais próximo:`, 'aviso',
       `<div class="opcoes">${ops.map((op,k) => `<button type="button" class="opcao${k===i?' on':''}" data-k="${k}"><em>${op.rot}</em>`+
-        `<b>R$ ${fmtCent(op.fin)}</b><span>${fmtDesc(op.D)}% · diferença de R$ ${dif(op)}</span></button>`).join('')}</div>`);
+        `<b>R$ ${fmtCent(op.fin)}</b><span>${fmtDesc(op.d)}% · diferença de R$ ${dif(op)}</span></button>`).join('')}</div>`);
     msgEl.querySelectorAll('.opcao').forEach(b => b.onclick = () => escolher(+b.dataset.k));
   };
   escolher(0);
@@ -2243,7 +2275,7 @@ async function carregarOrcamentoPDF(f){
       if(it.ipi != null && tot){ const t = r2(it.ipi / tot * 100); if(Math.abs(r2(tot * t / 100) - it.ipi) < 0.005) ipi = t; }
       if(P === null) semPreco.push(it.n);
       if(ipi === null) semIpi.push(it.n);
-      atuais.push({ P, q:it.qtde, ipi, D:Math.round(d * 10000) });
+      atuais.push({ P, q:it.qtde, ipi, d:{ D:Math.round(d * 10000), k:4 } });
       novaLinha({ P: P === null ? '' : BR(P), q: it.qtde ?? 1, ipi: ipi === null ? '' : BR(ipi) });
     });
     const extras = (D.desp?.frete || 0) + (D.desp?.seguro || 0) + (D.desp?.outras || 0);
@@ -2256,7 +2288,7 @@ async function carregarOrcamentoPDF(f){
     // a conta da calculadora reproduz o total atual do sistema?
     if(!semPreco.length && !semIpi.length && D.resumo?.fatura != null){
       const itensB = atuais.map(a => ({ P4:BigInt(Math.round(a.P*10000)), q:a.q, R:BigInt(Math.round(a.ipi*10000)) }));
-      const t = totalOrc(itensB, atuais.map(a => a.D), BigInt(Math.round(extras*100)));
+      const t = totalOrc(itensB, atuais.map(a => a.d), BigInt(Math.round(extras*100)));
       const fat = BigInt(Math.round(D.resumo.fatura * 100));
       html += t.fin === fat
         ? msg('ok', `Conferido: com os descontos atuais a conta da calculadora dá R$ ${fmtCent(t.fin)}, igual ao total do PDF.`)
@@ -2279,7 +2311,7 @@ $('#cLimpar').onclick = () => {
   $('#cExtras').value = '0,00'; $('#cAlvoOrc').value = ''; $('#cOrcStatus').innerHTML = '';
   desenharOrc();
 };
-['#cExtras','#cAlvoOrc'].forEach(s => $(s).addEventListener('input', desenharOrc));
+['#cExtras','#cAlvoOrc'].forEach(s => $(s).addEventListener('input', desenharOrcLogo));
 document.querySelectorAll('[data-ipi-todos]').forEach(b => b.onclick = () => {
   [...$('#cLinhas').rows].forEach(tr => tr.querySelector('.ip').value = b.dataset.ipiTodos);
   desenharOrc();
