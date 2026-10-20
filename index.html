@@ -119,16 +119,36 @@ input[type=file]{display:none}
 
 
 
-/* ---------- abas ---------- */
-.abas{display:flex;gap:6px;margin-bottom:16px;background:#fff;border:1px solid var(--linha);
-      border-radius:12px;padding:5px;box-shadow:0 1px 3px rgba(78,10,9,.06)}
-.aba{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 12px;
-     border:0;border-radius:8px;background:transparent;cursor:pointer;font-family:inherit;
-     font-size:12.5px;font-weight:600;color:var(--texto-suave);transition:.15s;letter-spacing:.1px}
-.aba svg{width:15px;height:15px}
-.aba:hover{background:var(--off);color:var(--vinho)}
-.aba.on{background:var(--vinho);color:#fff}
-.aba.on:hover{background:#661010;color:#fff}
+/* ---------- menu lateral (substituiu as abas em 20/10/2026) ---------- */
+.shell{display:flex;min-height:100vh}
+.shell > .app{flex:1;min-width:0}
+.side{flex:none;width:228px;position:sticky;top:0;height:100vh;overflow-y:auto;background:#fff;
+      border-right:1px solid var(--linha);padding:22px 14px;display:flex;flex-direction:column;gap:22px}
+.side .marca{display:block;width:118px;margin:0 auto;color:var(--vinho)}
+.side .marca svg{width:100%;display:block}
+.side nav{display:flex;flex-direction:column;gap:16px}
+.grupo{display:flex;flex-direction:column;gap:2px}
+.grupo .item{display:flex;align-items:center;gap:9px;padding:8px 10px;border:0;border-radius:9px;background:none;
+  font-family:inherit;font-size:13px;font-weight:700;color:var(--texto);cursor:pointer;text-align:left;transition:.15s}
+.grupo .item svg{width:17px;height:17px;flex:none;color:var(--vinho)}
+.grupo .item:hover{background:var(--off);color:var(--vinho)}
+.grupo.on .item{color:var(--vinho)}
+.grupo .sub{display:block;width:100%;padding:7px 10px 7px 36px;border:0;border-radius:8px;background:none;
+  font-family:inherit;font-size:12.5px;font-weight:500;color:var(--texto-suave);cursor:pointer;text-align:left;transition:.15s}
+.grupo .sub:hover{background:var(--off);color:var(--vinho)}
+.grupo .sub.on{background:var(--vinho);color:#fff;font-weight:600}
+.grupo .sub .pre{display:none}           /* nome do grupo: só aparece no celular, onde o título do grupo some */
+@media (max-width:980px) and (pointer:coarse){
+  .shell{display:block}
+  .side{position:static;width:auto;height:auto;border-right:0;border-bottom:1px solid var(--linha);
+        padding:12px 14px;gap:10px}
+  .side .marca{width:86px}
+  .side nav{flex-direction:row;gap:6px;overflow-x:auto;padding-bottom:2px}
+  .grupo{flex-direction:row;gap:6px;flex:none}
+  .grupo .item{display:none}
+  .grupo .sub{width:auto;white-space:nowrap;padding:10px 13px;border:1px solid var(--linha);font-size:13px}
+  .grupo .sub .pre{display:inline;opacity:.75}
+}
 
 /* ---------- formulário de cliente ---------- */
 .form{display:grid;grid-template-columns:1fr 1fr;gap:9px}
@@ -152,13 +172,11 @@ input[type=file]{display:none}
   .check{font-size:15px;padding:6px 0}
   .check input{width:22px;height:22px}
   #painelCalc .calc-tab input{font-size:16px}   /* evita zoom automático no iOS (vence a regra base, que vem depois) */
-  .modo button{padding:10px 14px}
-  .aba{padding:12px 10px}
 }
 
 /* ---------- calculadora de desconto ---------- */
 .grid[hidden],.barra-mobile[hidden],.calc[hidden]{display:none!important}
-#painelCalc{max-width:900px;margin:0 auto}          /* centrado sob as abas */
+#painelCalc{max-width:900px;margin:0 auto}          /* centrado na área de conteúdo */
 .calc{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
 @media(max-width:980px){.calc{grid-template-columns:1fr}}
 .calc-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -184,11 +202,6 @@ input[type=file]{display:none}
   text-transform:uppercase;color:var(--texto-suave)}
 .opcao b{display:block;font-size:15px;color:var(--vinho);margin-top:2px}
 .opcao span{font-size:11.5px;color:var(--texto-suave)}
-.modo{display:flex;width:fit-content;margin-left:auto;margin-right:auto;gap:4px;background:#fff;border:1px solid var(--linha);border-radius:10px;padding:4px;margin-bottom:14px}
-.modo button{font-family:inherit;font-size:12.5px;font-weight:600;color:var(--texto-suave);background:none;border:0;
-  border-radius:7px;padding:7px 14px;cursor:pointer}
-.modo button:hover{color:var(--vinho);background:var(--off)}
-.modo button.on{background:var(--vinho);color:#fff}
 #calcOrc{grid-template-columns:1.15fr 1fr}
 @media(max-width:980px){#calcOrc{grid-template-columns:1fr}}
 .links{display:flex;justify-content:space-between}
@@ -218,6 +231,35 @@ input[type=file]{display:none}
 .res-tab th:first-child,.res-tab td:first-child{text-align:left}
 .res-tab td{padding:4px;text-align:right;border-bottom:1px dashed var(--linha);font-variant-numeric:tabular-nums}
 .res-tab tr.aj td{background:#FFF6E5;font-weight:600}
+
+/* ---------- contratos: painel ---------- */
+.grid.ct{grid-template-columns:420px 1fr}
+@media(max-width:980px){.grid.ct{grid-template-columns:1fr}}
+#ladoOrc[hidden],#painelCt[hidden]{display:none!important}
+#painelCt[data-ct="cv"] .so-te,#painelCt[data-ct="te"] .so-cv{display:none!important}
+/* preenchido a partir do PDF: amarelo até alguém mexer, para conferir antes de imprimir */
+.campo input.auto,.campo textarea.auto,.ct-item input.auto{background:#FFF5CC;border-color:#E8C766}
+.campo input[readonly]{background:#F3EEEC;color:var(--texto-suave)}
+.ct-itens{display:flex;flex-direction:column;gap:8px}
+.ct-item{border:1px solid var(--linha);border-radius:10px;padding:8px;background:#fff}
+.ct-item .l1{display:flex;gap:6px;align-items:center}
+.ct-item .l1 .n{flex:none;width:18px;font-size:11px;font-weight:600;color:var(--texto-suave);text-align:center}
+.ct-item .l1 input{flex:1;min-width:0;padding:7px 9px;border:1px solid var(--linha);border-radius:8px;
+  font-family:inherit;font-size:13px;color:var(--texto);background:var(--off)}
+.ct-item .l1 input:focus{outline:0;border-color:var(--vinho);background:#fff}
+.ct-item .l2{display:flex;gap:6px;margin-top:6px;padding-left:24px}
+.ct-item .l2 .campo{flex:1;min-width:0}
+.ct-item .l2 .campo.m{flex:1.5}
+.ct-item .l2 input{padding:6px 8px;font-size:12.5px}
+.ct-item .x{flex:none;border:0;background:none;color:var(--texto-suave);font-size:18px;line-height:1;cursor:pointer;padding:2px 4px}
+.ct-item .x:hover{color:var(--vinho)}
+.form .sep{grid-column:1/-1;font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--vinho);margin-top:6px;padding-top:9px;border-top:1px dashed var(--linha)}
+@media (max-width:980px) and (pointer:coarse){
+  .ct-item .l1 input,.ct-item .l2 input{font-size:16px}   /* evita zoom automático no iOS */
+  .ct-item .l2{flex-wrap:wrap;padding-left:0}
+  .ct-item .l2 .campo{flex:1 1 40%}
+}
 
 /* ---------- ajustes exclusivos para toque em tela pequena ---------- */
 .barra-mobile{display:none}
@@ -405,11 +447,65 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
 .foot svg{width:3.4mm;height:3.4mm;color:var(--vinho);flex:none;margin-top:.2mm}
 .foot em{display:block;font-style:normal;font-size:5.4pt;font-weight:700;letter-spacing:.8px;color:var(--vinho);margin-bottom:.4mm}
 
+/* ====================== CONTRATOS (documento A4) ======================
+   Mesma folha, cabeçalho e rodapé do orçamento; tudo que é só do contrato leva o
+   prefixo ct- e não toca nas regras de cima (o orçamento continua idêntico).
+   Campo em branco sai como espaço para escrever à mão: célula vazia nas tabelas,
+   linha (.ln-in) no meio do texto. */
+.ct-tit{text-align:center;color:var(--vinho);margin:1.2mm 0 3.2mm}
+.ct-tit h2{font-size:12.5pt;font-weight:700;letter-spacing:.6px;line-height:1.2}
+.ct-tit h2 small{display:block;font-size:9pt;font-weight:600;letter-spacing:.9px;margin-top:.6mm}
+.ct-p{font-size:7.6pt;line-height:1.5;color:#3A2E2D;margin-bottom:1.5mm}
+.ct-p.just{text-align:justify}
+/* Só margem de BAIXO entre os blocos do contrato; o espaço de cima é padding. No modo de uma
+   página o .doc-inner é flex, e no flex as margens vizinhas se SOMAM em vez de se fundir: o termo
+   em branco media 13mm a mais em uma página do que em várias e não cabia na folha. */
+.ct-h{padding-top:1.6mm}
+.ct-h h3{letter-spacing:.7px}
+.ct-blk{padding-top:1.1mm}
+.ct-blk > .ct-p:last-child{margin-bottom:0}
+/* bordas "separate", cada célula com direita e base (e a primeira com a esquerda): com
+   border-collapse o html2canvas desenhava cada borda duas vezes, com um filete branco no
+   meio — só no PDF baixado */
+table.ct-tab{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:7.2pt;margin-bottom:2.4mm}
+table.ct-tab th{background:var(--vinho);color:#fff;font-size:6.4pt;font-weight:600;letter-spacing:.5px;
+  padding:1.4mm 2mm;text-align:left;line-height:1.25;vertical-align:middle}
+table.ct-tab th.c{text-align:center}
+table.ct-tab th.r{text-align:right}
+table.ct-tab tr.col th{background:#F3EAE8;color:var(--vinho);font-size:6pt}
+table.ct-tab td{border-right:.3mm solid var(--linha);border-bottom:.3mm solid var(--linha);
+  padding:1.1mm 2mm;height:5.8mm;vertical-align:middle;line-height:1.35;word-break:break-word}
+table.ct-tab td:first-child{border-left:.3mm solid var(--linha)}
+table.ct-tab tr.cab-folha>td,table.ct-tab tr.quebra>td{border:0;height:auto}
+table.ct-tab td.k{background:var(--off);color:#6B5B58;font-size:6.8pt}
+table.ct-tab td.v{font-weight:600;color:var(--texto);white-space:pre-line}
+table.ct-tab td.c{text-align:center}
+table.ct-tab td.r{text-align:right;white-space:nowrap}
+.ln-in{display:inline-block;border-bottom:.3mm solid #8A7A77;height:3.2mm;vertical-align:baseline}
+.ct-val{font-weight:600;color:var(--texto)}
+.ck{display:inline-block;width:2.5mm;height:2.5mm;border:.3mm solid #6B5B58;border-radius:.4mm;
+  vertical-align:-.25mm;margin:0 1mm 0 2.2mm}
+.ct-linhas .ln{border-bottom:.3mm dashed var(--linha-forte);height:5.2mm}
+.ct-txt{border:.35mm solid var(--linha);border-radius:1.8mm;padding:2.2mm 3mm;font-size:7.2pt;line-height:1.45;
+  white-space:pre-wrap;word-break:break-word;color:var(--texto)}
+.ct-ass{display:grid;grid-template-columns:1fr 1fr;gap:12mm;margin-top:5mm}
+.ct-ass h5{font-size:6.6pt;font-weight:700;letter-spacing:.7px;color:var(--vinho);text-align:center;
+  padding-bottom:1.6mm;border-bottom:.3mm solid var(--linha)}
+.ct-ass .assin{height:13mm;border-bottom:.3mm solid var(--texto)}
+.ct-ass .leg{font-size:6.4pt;color:var(--texto-suave);text-align:center;margin:1mm 0 2.6mm}
+.ct-ass .f{font-size:7pt;padding:.8mm 0}
+.ct-ass .f .k{min-width:18mm}
+.ct-ass .f .v{flex:1}
+.ct-ass .f .ln-in{width:100%}
+.ct-vias{text-align:center;font-size:6.4pt;color:var(--texto-suave);letter-spacing:.3px;margin-top:2.5mm}
+.foot.ct-foot{grid-template-columns:1fr}
+.doc.multi .ct-p,.doc.multi .ct-blk,.doc.multi table.ct-tab tr,.doc.multi .ct-ass{break-inside:avoid;page-break-inside:avoid}
+
 /* ====================== IMPRESSÃO ====================== */
 @page{size:A4;margin:0}
 @media print{
   html,body{background:#fff}
-  .app{display:none!important}
+  .app,.side{display:none!important}
   #printArea{display:block!important}
   #scaler{transform:none!important;width:auto!important;height:auto!important;overflow:visible!important}
   #scaler > .doc{transform:none!important}
@@ -423,33 +519,50 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
 </head>
 <body>
 
+<div class="shell">
+<!-- ======= MENU LATERAL ======= -->
+<aside class="side">
+  <span class="marca" id="marcaSide"></span>
+  <nav>
+    <div class="grupo" data-grupo="conv">
+      <button type="button" class="item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5M9 13h6M9 17h4"/></svg>
+        Conversor
+      </button>
+      <button type="button" class="sub" data-aba="com"><span class="pre">Conversor · </span>Com cliente</button>
+      <button type="button" class="sub" data-aba="sem"><span class="pre">Conversor · </span>Sem cliente</button>
+    </div>
+    <div class="grupo" data-grupo="calc">
+      <button type="button" class="item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 6.5h7M9 11h.01M12 11h.01M15 11h.01M9 14.5h.01M12 14.5h.01M15 14.5h.01M9 18h.01M12 18h.01M15 18h.01"/></svg>
+        Calculadora de desconto
+      </button>
+      <button type="button" class="sub" data-aba="calc" data-modo="um"><span class="pre">Calculadora · </span>Um produto</button>
+      <button type="button" class="sub" data-aba="calc" data-modo="orc"><span class="pre">Calculadora · </span>Orçamento inteiro</button>
+    </div>
+    <div class="grupo" data-grupo="ct">
+      <button type="button" class="item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/><path d="M8 17c1.2-1.6 2.2-2.4 3-2.4 1.3 0 .7 2.4 2 2.4.6 0 1.3-.5 2-1.2M9 10h6"/></svg>
+        Contratos
+      </button>
+      <button type="button" class="sub" data-aba="ct" data-ct="cv"><span class="pre">Contratos · </span>Compra e venda</button>
+      <button type="button" class="sub" data-aba="ct" data-ct="te"><span class="pre">Contratos · </span>Termo de entrega</button>
+    </div>
+  </nav>
+</aside>
+
 <div class="app">
   <div class="app-head">
-    <div class="mark"><svg viewBox="498 293 924 414" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="EOOSIN HomeWorld"><path fill-rule="nonzero" fill="currentColor" d="M 1259.460938 609.117188 L 1232.949219 521.65625 L 1232.605469 609.050781 L 1189.644531 609.101562 L 1189.609375 413.710938 L 1232.484375 413.742188 L 1260.855469 498.957031 L 1261.253906 413.773438 L 1304.234375 413.78125 L 1304.253906 609 Z M 1170.144531 609.023438 L 1118.664062 609.023438 L 1118.664062 413.132812 L 1170.144531 413.132812 Z M 1100.675781 578.855469 C 1099.074219 589.234375 1093.800781 597.472656 1084.917969 603.109375 C 1062.066406 617.613281 1023.285156 617.328125 1001.414062 599.433594 C 984.78125 585.828125 987.421875 560.390625 987.128906 539.210938 L 1034.542969 539.292969 L 1034.695312 567.609375 C 1034.714844 570.984375 1035.324219 574.210938 1036.808594 577.101562 C 1039.523438 579.78125 1043.171875 580.460938 1046.8125 579.222656 C 1055.441406 576.296875 1054.578125 560.261719 1052.3125 549.398438 C 1051.285156 544.484375 1048.558594 540.5 1044.453125 537.671875 L 1018.5 519.796875 C 1011.558594 515.011719 1004.625 510.625 998.730469 504.65625 C 983.597656 489.332031 983.359375 464.34375 987.25 443.621094 C 991.9375 418.671875 1016.519531 409.945312 1040.613281 409.667969 C 1055.066406 409.5 1069.027344 412.078125 1081.351562 419.449219 C 1099.949219 430.574219 1097.851562 451.359375 1098.339844 472.945312 L 1050.382812 472.992188 L 1050.136719 452.230469 C 1050.105469 449.488281 1049.46875 446.433594 1047.339844 444.539062 C 1045.136719 442.582031 1041.542969 442.800781 1038.8125 444.132812 C 1032.523438 447.195312 1032.066406 464.816406 1036.375 472.714844 C 1039 477.527344 1043.972656 480.390625 1048.589844 483.195312 C 1061.917969 491.296875 1074.679688 499.296875 1086.304688 509.644531 C 1093.210938 515.792969 1097.832031 523.023438 1099.691406 532.203125 C 1102.824219 547.667969 1103.089844 563.238281 1100.675781 578.855469 M 970.78125 542.355469 L 969.441406 569.570312 C 967.230469 588.691406 954.828125 603.90625 936.257812 609.703125 C 908.539062 618.351562 871.828125 612.890625 858.148438 584.328125 C 851.496094 570.433594 852.746094 534.511719 852.761719 514.761719 C 852.78125 495.777344 852.351562 477.609375 853.574219 458.691406 C 854.386719 446.089844 858.59375 434.234375 867.671875 425.585938 C 878.804688 414.980469 893.585938 410.175781 908.832031 409.746094 C 919.175781 409.453125 928.621094 410.398438 938.160156 413.910156 C 955.628906 420.339844 967.691406 435.363281 969.578125 453.984375 L 970.828125 476.613281 Z M 842.433594 398.023438 L 838.386719 366.234375 L 846.457031 366.453125 L 848.378906 382.363281 L 850.636719 366.230469 L 858.902344 366.433594 L 860.535156 384.125 L 863.191406 366.457031 C 865.492188 365.996094 868.492188 366.027344 871.035156 366.421875 L 867.070312 398.0625 L 857.300781 398.0625 L 854.894531 383.738281 C 853.183594 388.121094 853.082031 392.597656 852.351562 397.753906 Z M 835.75 395.609375 C 834.019531 397.992188 831.058594 398.683594 827.511719 398.480469 C 824.144531 398.285156 820.089844 396.597656 819.742188 392.582031 C 819.28125 387.308594 818.328125 380.859375 820.496094 375.753906 C 822.957031 369.964844 832.902344 370.40625 835.90625 375.21875 C 837.929688 378.464844 837.347656 382.011719 837.300781 385.554688 L 827.21875 385.828125 C 827.210938 388.789062 826.597656 391.300781 828.136719 394.15625 C 830.171875 392.800781 830.335938 390.96875 829.4375 387.742188 C 832.277344 386.753906 834.398438 387.191406 837.25 387.285156 C 837.632812 390.253906 837.449219 393.273438 835.75 395.609375 M 835.023438 558.578125 C 834.722656 567.765625 833.636719 576.445312 829.902344 584.675781 C 824.09375 597.5 812.542969 606.769531 798.53125 610.4375 C 769.648438 617.996094 734.4375 611.457031 722.570312 583.285156 C 719.414062 575.78125 718.328125 567.746094 718.015625 559.417969 C 716.8125 527.265625 716.851562 495.769531 717.984375 463.605469 C 718.339844 453.558594 719.960938 444.066406 724.800781 435.476562 C 737.359375 413.195312 763.785156 407.429688 788.714844 410.53125 C 802.515625 412.246094 815.492188 418.535156 824.3125 429.367188 C 831.4375 438.117188 834.304688 448.910156 834.800781 460.351562 C 836.226562 493.320312 836.097656 525.609375 835.023438 558.578125 M 704.226562 609.070312 L 615.425781 609.085938 L 615.460938 413.734375 L 700.925781 413.757812 L 700.9375 452.976562 L 666.78125 452.992188 L 666.746094 489.765625 L 698.78125 489.871094 L 698.804688 526.984375 L 666.65625 527 L 666.753906 569.761719 L 704.265625 569.867188 Z M 754.472656 366.207031 L 754.921875 376.613281 C 754.964844 377.667969 757.105469 377.65625 757.121094 376.652344 L 757.28125 366.339844 L 765.542969 366.222656 L 765.5625 397.953125 L 757.324219 397.90625 L 757.152344 385.441406 C 757.140625 384.382812 754.710938 384.480469 754.699219 385.628906 L 754.601562 397.804688 L 746.582031 398.023438 L 746.515625 366.226562 Z M 777.234375 371.652344 C 781.070312 371.773438 785.84375 373.253906 785.914062 377.546875 L 786.140625 391.144531 C 786.222656 396.21875 781.917969 398.738281 776.808594 398.566406 C 771.652344 398.394531 768.273438 396.070312 768.265625 391.128906 L 768.253906 379.832031 C 768.246094 374.476562 772 371.488281 777.234375 371.652344 M 788.902344 372.382812 C 791.679688 371 795.316406 373.042969 797.265625 372.65625 C 800.464844 371.828125 803.449219 371.007812 806.476562 373.566406 C 808.296875 372.527344 810.308594 371.285156 812.445312 371.699219 C 813.855469 371.972656 816.519531 372.894531 816.5625 375.242188 L 816.992188 397.675781 C 814.222656 398.125 811.597656 398.101562 809.265625 397.691406 C 808.726562 390.292969 810.539062 383.609375 808.074219 375.933594 C 805.453125 383.210938 807.324219 390.097656 806.816406 397.6875 C 804.59375 398.070312 801.875 398.085938 799.15625 397.6875 L 799.039062 378.257812 C 799.035156 377.5 798.609375 377.132812 798.441406 376.863281 C 798.117188 376.335938 796.5625 376.316406 796.558594 377.304688 L 796.453125 397.734375 C 793.855469 398.023438 791.410156 398.078125 788.808594 397.71875 Z M 881.257812 371.621094 C 886.183594 371.824219 889.925781 374.730469 889.886719 379.929688 L 889.8125 390.933594 C 889.773438 396 886.042969 398.492188 880.859375 398.507812 C 875.777344 398.527344 871.941406 396.574219 871.9375 391.621094 L 871.929688 379.367188 C 871.925781 374.058594 876.1875 371.414062 881.257812 371.621094 M 892.453125 373.140625 C 894.109375 371.335938 898.886719 371.355469 900.5 373.941406 C 901.90625 373.089844 902.679688 371.921875 904.933594 371.691406 L 904.824219 380.523438 C 902.039062 380.515625 900.339844 382.058594 900.34375 384.546875 L 900.359375 397.609375 C 897.425781 398.203125 895.246094 398.199219 892.363281 397.625 Z M 914.738281 366.222656 L 915.007812 379.433594 L 914.890625 397.773438 L 906.753906 397.894531 L 906.691406 366.234375 Z M 920.328125 372.15625 C 922.84375 371.292969 925.3125 371.667969 927.511719 373.523438 L 927.738281 366.210938 L 935.449219 366.230469 L 935.460938 397.679688 C 932.683594 398.980469 929.597656 397.703125 926.726562 397.554688 C 924.933594 397.460938 922.761719 398.984375 921.011719 398.335938 C 919.789062 397.882812 917.695312 396.875 917.644531 394.710938 L 917.273438 378.21875 C 917.207031 375.382812 918.207031 372.882812 920.328125 372.15625 M 1381.878906 392.816406 L 992.925781 305.710938 C 970.511719 300.695312 946.992188 301.203125 924.554688 306.230469 L 544.328125 391.410156 C 532.660156 394.023438 521.867188 397.335938 512.824219 404.898438 C 510.007812 407.253906 505.996094 410.929688 505.996094 415.171875 L 506 585.914062 C 506 595.539062 526.679688 605.609375 538.4375 608.226562 L 929.066406 695.277344 C 950.078125 698.644531 970.90625 698.652344 991.96875 695.273438 L 1237.441406 640.488281 L 1359.445312 613.386719 L 1387.042969 606.742188 C 1396.832031 604.386719 1413.894531 594.816406 1413.902344 585.375 L 1414.003906 414.890625 C 1411.3125 403.449219 1393.589844 395.4375 1381.878906 392.816406 "/><path fill-rule="nonzero" fill="currentColor" d="M 911.75 442.925781 C 907.882812 443.003906 905.007812 445.464844 904.734375 449.792969 L 903.804688 464.464844 L 903.894531 561.007812 C 903.898438 566.496094 903.835938 571.5 905.851562 576.585938 C 907.355469 580.390625 914.984375 581.296875 917.105469 577.300781 C 919.425781 572.9375 919.433594 568.136719 919.4375 563.449219 L 919.605469 463.652344 L 918.878906 449.660156 C 918.65625 445.335938 915.6875 442.847656 911.75 442.925781 "/><path fill-rule="nonzero" fill="currentColor" d="M 783.199219 447.644531 C 782.386719 443.8125 778.691406 442.578125 775.199219 443.0625 C 772.34375 443.457031 769.796875 445.925781 769.597656 449.398438 L 768.652344 466.058594 L 768.613281 557.765625 L 769.515625 573.78125 C 769.746094 577.8125 773.175781 579.902344 776.769531 579.832031 C 780.464844 579.761719 783.261719 577.203125 783.449219 572.761719 L 784.402344 550.457031 L 784.378906 464.445312 C 784.378906 458.597656 784.359375 453.144531 783.199219 447.644531 "/><path fill-rule="nonzero" fill="currentColor" d="M 927.082031 393.464844 C 927.324219 393.273438 927.679688 392.683594 927.675781 391.613281 L 927.617188 377.3125 C 927.613281 376.375 926.140625 376.285156 925.707031 376.730469 C 925.484375 376.964844 925.21875 377.417969 925.230469 378.1875 L 925.40625 392.609375 C 925.417969 393.53125 926.671875 393.796875 927.082031 393.464844 "/><path fill-rule="nonzero" fill="currentColor" d="M 882.089844 376.355469 L 879.640625 376.355469 L 879.640625 393.675781 L 882.089844 393.675781 Z M 882.089844 376.355469 "/><path fill-rule="nonzero" fill="currentColor" d="M 829.597656 376.519531 L 827.15625 376.507812 L 827.132812 381.363281 L 829.574219 381.375 Z M 829.597656 376.519531 "/><path fill-rule="nonzero" fill="currentColor" d="M 776.78125 393.648438 C 777.054688 393.875 778.304688 393.730469 778.316406 392.769531 L 778.484375 378.214844 C 778.496094 377.019531 778.199219 376.75 777.589844 376.476562 C 777.242188 376.320312 776.089844 376.675781 776.089844 377.175781 L 776.066406 392.128906 C 776.066406 392.894531 776.488281 393.410156 776.78125 393.648438 "/></svg></div>
     <div>
-      <h1>Conversor de Orçamento</h1>
-      <p>Converte o PDF exportado do sistema para o modelo institucional EOOSIN HomeWorld.</p>
+      <h1 id="tituloApp">Conversor de Orçamento</h1>
+      <p id="subApp">Converte o PDF exportado do sistema para o modelo institucional EOOSIN HomeWorld.</p>
     </div>
-  </div>
-
-  <div class="abas">
-    <button class="aba on" data-aba="com" id="abaCom">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
-      Orçamento com cliente
-    </button>
-    <button class="aba" data-aba="sem" id="abaSem">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5M9 13h6M9 17h4"/></svg>
-      Orçamento sem cliente
-    </button>
-    <button class="aba" data-aba="calc" id="abaCalc">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M8.5 6.5h7M9 11h.01M12 11h.01M15 11h.01M9 14.5h.01M12 14.5h.01M15 14.5h.01M9 18h.01M12 18h.01M15 18h.01"/></svg>
-      Calculadora de desconto
-    </button>
   </div>
 
   <div class="grid">
     <!-- ---------- coluna esquerda: controles ---------- -->
     <div>
+     <div id="ladoOrc">
       <!-- ======= ABA 1: orçamento que já vem com o cliente correto ======= -->
       <div id="painelCom">
       <div class="card">
@@ -567,6 +680,104 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
           Nenhum valor é estimado: tudo é lido do PDF e conferido contra os totais do próprio sistema.
         </div>
       </div>
+     </div>
+
+      <!-- ======= CONTRATOS: compra e venda e termo de entrega ======= -->
+      <div id="painelCt" data-ct="cv" hidden>
+        <div class="card">
+          <h2><i class="n">1</i> Pedido do sistema (opcional)</h2>
+          <div class="drop" id="drop3">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <b>Solte o PDF aqui ou clique</b>
+            <span>Preenche cliente, produtos e valores (.pdf)</span>
+          </div>
+          <input type="file" id="file3" accept="application/pdf">
+          <div id="ctStatus"></div>
+          <div class="hint">Sem PDF, é só digitar. Os campos que vierem do PDF ficam em <b>amarelo</b> até
+            você mexer neles, para conferir antes de imprimir.</div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h2><i class="n">2</i> Pedido e cliente</h2>
+          <div class="form">
+            <div class="campo"><label for="kNum">Contrato/Pedido nº</label><input id="kNum" type="text" autocomplete="off"></div>
+            <div class="campo so-cv"><label for="kData">Data da contratação</label><input id="kData" type="text" autocomplete="off" placeholder="dd/mm/aaaa"></div>
+            <div class="campo so-te"><label for="kNF">Nota Fiscal nº</label><input id="kNF" type="text" autocomplete="off"></div>
+            <div class="campo wide"><label for="kCliente">Cliente</label><input id="kCliente" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kDoc">CPF/CNPJ</label><input id="kDoc" type="text" autocomplete="off"></div>
+            <div class="campo so-te"><label for="kFone">Telefone</label><input id="kFone" type="text" autocomplete="off"></div>
+            <div class="campo so-cv"><label for="kVend">Vendedor(a)</label><input id="kVend" type="text" autocomplete="off"></div>
+            <div class="campo wide"><label for="kEnd">Endereço de entrega</label><textarea id="kEnd" rows="2" autocomplete="off"></textarea></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h2><i class="n">3</i> <span class="so-cv">Produtos · Anexo I</span><span class="so-te">Produtos entregues</span></h2>
+          <div class="ct-itens" id="ctItens"></div>
+          <div class="links"><button type="button" class="link" id="ctMais">+ Adicionar produto</button></div>
+        </div>
+
+        <div class="card so-cv" style="margin-top:14px">
+          <h2><i class="n">4</i> Quadro-resumo</h2>
+          <div class="form">
+            <div class="campo wide"><label for="kProd">Produto(s)</label><input id="kProd" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kModelo">Modelo/Referência</label><input id="kModelo" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kMedidas">Medidas</label><input id="kMedidas" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kCor">Cor/Acabamento</label><input id="kCor" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kQtde">Quantidade</label><input id="kQtde" type="text" autocomplete="off"></div>
+            <div class="sep">Valores (R$)</div>
+            <div class="campo"><label for="kValProd">Valor dos produtos</label><input id="kValProd" type="text" inputmode="decimal" autocomplete="off"></div>
+            <div class="campo"><label for="kFrete">Frete</label><input id="kFrete" type="text" inputmode="decimal" autocomplete="off"></div>
+            <div class="campo"><label for="kTotal">Valor total</label><input id="kTotal" type="text" inputmode="decimal" autocomplete="off"></div>
+            <div class="campo"><label for="kEntrada">Entrada/1º pagamento</label><input id="kEntrada" type="text" inputmode="decimal" autocomplete="off"></div>
+            <div class="campo"><label for="kSaldo">Saldo</label><input id="kSaldo" type="text" readonly tabindex="-1" placeholder="total − entrada"></div>
+            <div class="campo wide"><label for="kPgto">Forma de pagamento</label><textarea id="kPgto" rows="2" autocomplete="off"></textarea></div>
+            <div class="sep">Entrega e contratação</div>
+            <div class="campo wide"><label for="kPrazo">Prazo de entrega</label><input id="kPrazo" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kPrev">Previsão de entrega</label><input id="kPrev" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kLocal">Local da contratação</label><input id="kLocal" type="text" autocomplete="off"></div>
+          </div>
+          <div id="ctConf"></div>
+        </div>
+
+        <div class="card so-cv" style="margin-top:14px">
+          <h2><i class="n">5</i> Assinaturas e observações</h2>
+          <div class="form">
+            <div class="campo"><label for="kDataAss">Data da assinatura</label><input id="kDataAss" type="date"></div>
+            <div class="campo"></div>
+            <div class="campo"><label for="kRepNome">Representante EOOSIN</label><input id="kRepNome" type="text" autocomplete="off" placeholder="Nome"></div>
+            <div class="campo"><label for="kRepCpf">CPF do representante</label><input id="kRepCpf" type="text" autocomplete="off"></div>
+            <div class="campo wide"><label for="kObsTec">Observações técnicas (Anexo I)</label><textarea id="kObsTec" rows="3" autocomplete="off"></textarea></div>
+          </div>
+        </div>
+
+        <div class="card so-te" style="margin-top:14px">
+          <h2><i class="n">4</i> Dados do transporte</h2>
+          <div class="form">
+            <div class="campo wide"><label for="kTransp">Transportadora</label><input id="kTransp" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kTranspCnpj">CNPJ</label><input id="kTranspCnpj" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kPlaca">Placa do veículo</label><input id="kPlaca" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kMotorista">Motorista/Entregador</label><input id="kMotorista" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kMotDoc">RG/CPF</label><input id="kMotDoc" type="text" autocomplete="off"></div>
+            <div class="campo wide"><label for="kDataHora">Data/hora da entrega</label><input id="kDataHora" type="text" autocomplete="off" placeholder="dd/mm/aaaa hh:mm"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h2><i class="n">✓</i> Gerar documento</h2>
+          <div class="form-acoes">
+            <button class="btn btn-primary" id="ctPdf">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Baixar PDF
+            </button>
+            <button class="btn btn-ghost" id="ctLimpar">Limpar</button>
+          </div>
+          <div class="hint">
+            O texto das cláusulas é o dos arquivos da pasta Contratos, sem mudança. Campo deixado em
+            branco sai como espaço para preencher à mão. <b>Limpar</b> apaga os dados dos dois documentos.
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ---------- coluna direita: pré-visualização ---------- -->
@@ -583,7 +794,6 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
 
   <!-- ======= ABA 3: calculadora de desconto (não mexe no documento) ======= -->
   <div id="painelCalc" hidden>
-    <div class="modo"><button type="button" class="on" data-modo="um">Um produto</button><button type="button" data-modo="orc">Orçamento inteiro</button></div>
     <div class="calc" id="calcUm">
       <div class="card">
         <h2><i class="n">1</i> Dados do produto</h2>
@@ -685,6 +895,7 @@ table.prod tfoot tr.nota-foto td{border-top:0;padding:1.2mm 1.3mm 0;font-size:5.
     </div>
   </div>
 </div>
+</div><!-- /.shell -->
 
 <div class="barra-mobile" id="barraMobile">
   <button class="btn btn-primary" id="btnPdfMob" disabled>Baixar PDF</button>
@@ -1475,13 +1686,15 @@ const FOLHA_L = 210*PX_MM;          // largura útil da folha
 const FOLHA_A = 292*PX_MM;          // altura útil da folha
 const PASSOS  = [1,.97,.94,.91,.88,.85,.82,.79,.76];
 
-function paginar(doc){
+function paginar(doc, piso=null){
   const inner = doc.querySelector('.doc-inner');
   doc.classList.remove('multi');
   /* Com fotos o encaixe em uma página tem piso: espremer até 76% deixaria a foto
      com 15mm. Abaixo do piso o documento vai para duas páginas — o cliente
-     preferiu duas páginas a foto pequena (02/09/2026). */
-  const passos = doc.querySelector('td.foto') ? PASSOS.filter(k=>k>=.88) : PASSOS;
+     preferiu duas páginas a foto pequena (02/09/2026).
+     Os contratos passam `piso` (91%): texto para assinar não sai em letra miúda — abaixo
+     disso o termo vai para duas folhas (o contrato de compra e venda sempre tem várias). */
+  const passos = piso ? PASSOS.filter(k=>k>=piso) : doc.querySelector('td.foto') ? PASSOS.filter(k=>k>=.88) : PASSOS;
   for(const k of passos){
     inner.style.transform = 'none';
     inner.style.width     = (FOLHA_L/k)+'px';
@@ -1658,28 +1871,80 @@ function limparSaida(){
   status.innerHTML=''; status2.innerHTML='';
   file.value=''; file2.value=''; $('#fRepCli').value=''; $('#fObs').value=''; $('#fPedido').checked=false;
 }
-/* A calculadora não mexe no documento: ir até ela e voltar para a mesma aba mantém o
-   orçamento carregado. Entre as duas abas de orçamento a troca continua limpando tudo. */
-let abaAtual = 'com', abaDoc = 'com';
+/* A calculadora e os contratos não mexem no orçamento: ir até eles e voltar para a mesma
+   aba mantém o orçamento carregado (ele é redesenhado, porque os contratos usam a mesma
+   pré-visualização). Entre as duas abas de orçamento a troca continua limpando tudo. */
+let abaAtual = 'com', abaDoc = 'com', ctAtual = 'cv', modoCalc = 'um';
 function abrirAba(nome){
-  document.querySelectorAll('.aba').forEach(b=>b.classList.toggle('on', b.dataset.aba===nome));
-  const calc = nome==='calc', voltando = abaAtual==='calc' && nome===abaDoc;
+  // clicar de novo no orçamento já aberto não pode apagar o que está carregado
+  if(nome===abaAtual && (nome==='com' || nome==='sem')) return;
+  const calc = nome==='calc', ct = nome==='ct';
+  const voltando = (abaAtual==='calc' || abaAtual==='ct') && nome===abaDoc;
   abaAtual = nome;
+  marcarMenu();
   $('#painelCalc').hidden = !calc;
   $('.grid').hidden = calc;
   $('#barraMobile').hidden = calc;
-  if(calc){ $('#cPreco').focus(); return; }
+  $('.grid').classList.toggle('ct', ct);
+  $('#ladoOrc').hidden = ct;
+  $('#painelCt').hidden = !ct;
+  if(calc){ (modoCalc==='um' ? $('#cPreco') : $('#cAlvoOrc')).focus(); return; }
+  if(ct){
+    $('#painelCt').dataset.ct = ctAtual;
+    $('#btnPdfMob').disabled = false;
+    zoom = null; desenharContrato();
+    return;
+  }
   $('#painelCom').hidden = nome!=='com';
   $('#painelSem').hidden = nome!=='sem';
   $('#nConf').textContent  = nome==='sem' ? '3' : '2';
   $('#nGerar').textContent = nome==='sem' ? '4' : '3';
   abaDoc = nome;
-  if(voltando){ if(DATA){ zoom=null; fit(); } return; }    // a pré-visualização ficou escondida: reajusta
+  if(voltando){                    // a pré-visualização ficou escondida ou com um contrato: refaz
+    if(DATA){ zoom=null; redesenhar(); } else limparPreview();
+    $('#btnPdfMob').disabled = !DATA;
+    return;
+  }
   limparSaida();
 }
-$('#abaCom').onclick  = ()=>abrirAba('com');
-$('#abaSem').onclick  = ()=>abrirAba('sem');
-$('#abaCalc').onclick = ()=>abrirAba('calc');
+
+/* ---------- menu lateral ---------- */
+const TITULOS = {
+  conv:['Conversor de Orçamento','Converte o PDF exportado do sistema para o modelo institucional EOOSIN HomeWorld.'],
+  calc:['Calculadora de desconto','Descobre o desconto que fecha o valor combinado com o cliente.'],
+  ct:  ['Contratos','Preenche o contrato de compra e venda e o termo de entrega para o cliente ou a transportadora conferir e assinar.']
+};
+function marcarMenu(){
+  const grupo = abaAtual==='calc' ? 'calc' : abaAtual==='ct' ? 'ct' : 'conv';
+  document.querySelectorAll('.side .grupo').forEach(g=>g.classList.toggle('on', g.dataset.grupo===grupo));
+  document.querySelectorAll('.side .sub').forEach(b=>b.classList.toggle('on',
+    b.dataset.aba===abaAtual && (abaAtual==='calc' ? b.dataset.modo===modoCalc
+                               : abaAtual==='ct'   ? b.dataset.ct===ctAtual : true)));
+  $('#tituloApp').textContent = TITULOS[grupo][0];
+  $('#subApp').textContent    = TITULOS[grupo][1];
+  // no celular o menu é uma faixa que rola de lado: traz o item ativo para o meio dela
+  const nav = $('.side nav'), on = $('.side .sub.on');
+  if(on && nav.scrollWidth > nav.clientWidth)
+    nav.scrollLeft += on.getBoundingClientRect().left - nav.getBoundingClientRect().left
+                      - (nav.clientWidth - on.offsetWidth)/2;
+}
+function definirModo(m){
+  modoCalc = m;
+  $('#calcUm').hidden  = m !== 'um';
+  $('#calcOrc').hidden = m !== 'orc';
+}
+document.querySelectorAll('.side .sub').forEach(b => b.onclick = ()=>{
+  if(b.dataset.modo) definirModo(b.dataset.modo);
+  if(b.dataset.ct)   ctAtual = b.dataset.ct;
+  abrirAba(b.dataset.aba);
+});
+// o título do grupo abre o último subitem usado nele
+document.querySelectorAll('.side .item').forEach(b => b.onclick = ()=>{
+  const g = b.parentElement.dataset.grupo;
+  abrirAba(g==='conv' ? abaDoc : g);
+});
+$('#marcaSide').innerHTML = LOGO;
+marcarMenu();
 
 function conferencia(D){
   /* Este card confere o que veio do sistema, então mostra os valores-base (sem o IPI
@@ -1729,7 +1994,7 @@ $('#zFit').onclick= ()=>{ zoom=null; fit(); };
 let larguraAnterior = window.innerWidth;
 window.addEventListener('resize',()=>{
   if(window.innerWidth===larguraAnterior) return;
-  larguraAnterior = window.innerWidth; zoom=null; if(DATA) fit();
+  larguraAnterior = window.innerWidth; zoom=null; if(scaler.querySelector('.doc')) fit();
 });
 
 /* mover o documento para dentro do viewport da pré-visualização */
@@ -1761,15 +2026,20 @@ function paginarDownload(doc, alturaPagina){
      borda do papel e saía cortado. */
   const MARGEM_TOPO = 7*PX, MARGEM_PE = 5*PX, UTIL = alturaPagina - MARGEM_PE;
 
-  const INDIVISIVEL = 'table.prod tbody tr, table.prod tfoot tr, .sec-t, .box, .resumo, .bottom, .obs, .obsger, .foot';
+  /* Os blocos dos contratos (.ct-blk, linhas de table.ct-tab, .ct-ass) entraram em 20/10/2026.
+     Duas marcas só deles: .junto (o título desce junto com o bloco seguinte) e .nova-folha
+     (o Anexo I abre folha nova, como no Word). O orçamento não usa nenhuma das duas. */
+  const INDIVISIVEL = 'table.prod tbody tr, table.prod tfoot tr, .sec-t, .box, .resumo, .bottom, .obs, .obsger, .foot'+
+                      ', table.ct-tab tr, .ct-p, .ct-blk, .ct-ass';
   const topoDoc  = () => doc.getBoundingClientRect().top;
-  const cabecalho = doc.querySelector('table.prod thead tr');
-  const nCols = cabecalho ? cabecalho.children.length : 1;
+  /* o cabeçalho que se repete é o da tabela de cada linha (o orçamento só tem uma) */
+  const cabDe  = el => el.closest('table')?.querySelector('thead tr:last-child') || null;
+  const colsDe = el => { const c = cabDe(el); return c ? [...c.children].reduce((s,td)=>s+td.colSpan, 0) : 1; };
   const tipo    = doc.dataset.tipo || 'ORÇAMENTO';
   const numero  = doc.dataset.num || '';
   const cliente = doc.dataset.cliente || '';
 
-  const espacador = (altura, comoLinha) => {
+  const espacador = (altura, comoLinha, nCols=1) => {
     if(!comoLinha){
       const d = document.createElement('div');
       d.className = 'quebra';
@@ -1784,9 +2054,9 @@ function paginarDownload(doc, alturaPagina){
 
   /* o cabeçalho de continuação — a folha solta tem de dizer de que orçamento é.
      A contagem de páginas fica vazia aqui: só dá para preenchê-la no fim, quando
-     o documento parar de crescer. */
-  const cabFolha = comoLinha => {
-    const dentro = `<div class="in"><span class="nu">${esc(tipo)} Nº ${esc(numero)}</span>`+
+     o documento parar de crescer. Contrato sem número sai só com o título. */
+  const cabFolha = (comoLinha, nCols=1) => {
+    const dentro = `<div class="in"><span class="nu">${esc(tipo)}${numero?' Nº '+esc(numero):''}</span>`+
                    `<span class="cl">${esc(cliente)}</span><span class="pg"></span></div>`;
     if(!comoLinha){
       const d = document.createElement('div'); d.className='cab-folha'; d.innerHTML=dentro; return d;
@@ -1803,9 +2073,10 @@ function paginarDownload(doc, alturaPagina){
      o cabeçalho nasceu a 3,3mm da borda em vez dos 7mm. */
   const empurrar = (el, alvo) => {
     const ehLinha = el.tagName === 'TR', pai = el.parentNode;
-    const sp = espacador(Math.max(1, alvo - (el.getBoundingClientRect().top - topoDoc())), ehLinha);
+    const cabecalho = ehLinha ? cabDe(el) : null, nCols = ehLinha ? colsDe(el) : 1;
+    const sp = espacador(Math.max(1, alvo - (el.getBoundingClientRect().top - topoDoc())), ehLinha, nCols);
     pai.insertBefore(sp, el);
-    const cab = cabFolha(ehLinha);
+    const cab = cabFolha(ehLinha, nCols);
     pai.insertBefore(cab, el);
     // a tabela continua na folha nova: o cabeçalho dela vai junto
     if(ehLinha && cabecalho && pai.tagName === 'TBODY'){
@@ -1818,12 +2089,21 @@ function paginarDownload(doc, alturaPagina){
     if(Math.abs(erro) > .5) caixa.style.height = (parseFloat(caixa.style.height) + erro) + 'px';
   };
 
-  doc.querySelectorAll(INDIVISIVEL).forEach(el=>{
+  const lista = [...doc.querySelectorAll(INDIVISIVEL)];
+  lista.forEach((el, i)=>{
     // linha .cola (a nota das fotos) não vira folha sozinha: viaja com a linha de cima
     if(el.classList.contains('cola')) return;
     const r = el.getBoundingClientRect();
+    // o Anexo I abre folha nova (a não ser que já esteja no topo de uma)
+    if(el.classList.contains('nova-folha')){
+      const topo = r.top - topoDoc(), folha = Math.floor(topo/alturaPagina);
+      if(topo - folha*alturaPagina > MARGEM_TOPO + 2) empurrar(el, (folha+1)*alturaPagina + MARGEM_TOPO);
+      return;
+    }
     let ultimo = el;
     while(ultimo.nextElementSibling?.classList.contains('cola')) ultimo = ultimo.nextElementSibling;
+    // título .junto: mede até o fim do bloco seguinte, para não ficar sozinho no pé da folha
+    for(let j = i; lista[j].classList.contains('junto') && lista[j+1]; j++) ultimo = lista[j+1];
     const altura = ultimo.getBoundingClientRect().bottom - r.top;
     if(altura > UTIL - MARGEM_TOPO) return;          // não cabe nem numa folha inteira
     const topo  = r.top - topoDoc();
@@ -2359,12 +2639,7 @@ $('#oCopiar').onclick = async () => {
   try{ await navigator.clipboard.writeText(v); $('#oCopiar').textContent = 'Copiado ✓'; }
   catch(e){ $('#oCopiar').textContent = v; }
 };
-document.querySelectorAll('.modo button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.modo button').forEach(x => x.classList.toggle('on', x === b));
-  $('#calcUm').hidden  = b.dataset.modo !== 'um';
-  $('#calcOrc').hidden = b.dataset.modo !== 'orc';
-});
-novaLinha();
+novaLinha();          // os modos "Um produto" e "Orçamento inteiro" são escolhidos no menu lateral (definirModo)
 
 /* exportação */
 function nomeArquivo(D){
@@ -2372,10 +2647,27 @@ function nomeArquivo(D){
             .map(w=>w.replace(/[^\wÀ-ÿ]/g,'')).filter(Boolean).join('_');
   return `${D.pedido?'Pedido':'Orcamento'}_${cli||'CLIENTE'}.pdf`;
 }
-$('#btnPdfMob').onclick = ()=> $('#btnPdf').click();
-$('#btnPdf').onclick = async ()=>{
-  if(!DATA) return;
-  const btn=$('#btnPdf'); const txt=btn.innerHTML;
+$('#btnPdfMob').onclick = ()=> (abaAtual==='ct' ? $('#ctPdf') : $('#btnPdf')).click();
+$('#btnPdf').onclick = ()=>{ if(DATA) baixarPDF($('#btnPdf'), nomeArquivo(DATA)); };
+
+/* Texto justificado no PDF baixado. congelarQuebras() pôs um <br> no fim de cada linha, e
+   linha que termina em <br> conta como "última linha": o navegador deixaria de justificá-la
+   e o parágrafo sairia com a margem direita torta. Cada linha vira um bloco próprio,
+   justificado até a borda (text-align-last); só a última do parágrafo fica como estava.
+   As palavras ficam exatamente onde estavam na tela. */
+function justificarLinhas(root){
+  root.querySelectorAll('.just').forEach(p=>{
+    const partes = p.innerHTML.split(/<br\s*\/?>/i);
+    if(partes.length < 2) return;
+    p.innerHTML = partes.map((h,i)=>
+      `<span style="display:block;text-align-last:${i<partes.length-1?'justify':'auto'}">${h}</span>`).join('');
+  });
+}
+
+/* gera o PDF do documento que está na pré-visualização (orçamento ou contrato) */
+async function baixarPDF(btn, nome){
+  if(!scaler.firstElementChild) return;
+  const txt=btn.innerHTML;
   btn.disabled=true; btn.innerHTML='Gerando PDF…';
   // captura numa cópia ancorada no topo da página (evita deslocamento do html2canvas)
   const clone = scaler.firstElementChild.cloneNode(true);
@@ -2385,13 +2677,14 @@ $('#btnPdf').onclick = async ()=>{
   holder.appendChild(clone); document.body.appendChild(holder);
   await svgsParaImagens(clone);          // html2canvas não desenha SVG inline
   congelarQuebras(clone);                // e quebra linha diferente do Chrome
+  justificarLinhas(clone);               // (só os contratos têm texto justificado)
   // a folha da imagem é a largura do documento na proporção do A4 — a mesma
   // altura em que o html2pdf vai fatiar o canvas
   paginarDownload(clone, clone.offsetWidth * 297/210);
   const sx=window.scrollX, sy=window.scrollY; window.scrollTo(0,0);
   try{
     await html2pdf().set({
-      margin:0, filename:nomeArquivo(DATA),
+      margin:0, filename:nome,
       image:{type:'jpeg',quality:0.98},
       html2canvas:{scale:TOQUE?2:3, useCORS:true, backgroundColor:'#ffffff',
                    scrollX:0, scrollY:0, x:0, y:0,
@@ -2405,7 +2698,531 @@ $('#btnPdf').onclick = async ()=>{
   }catch(e){ alert('Falha ao gerar o PDF: '+e.message); }
   holder.remove(); window.scrollTo(sx,sy);
   btn.disabled=false; btn.innerHTML=txt;
+}
+
+/* ============================================================
+   7. CONTRATOS — compra e venda e termo de entrega (20/10/2026)
+   ------------------------------------------------------------
+   O texto vem de Contratos/*.docx, palavra por palavra (extraído por
+   _scripts/extrair_contratos.py e gerado aqui por _scripts/montar_contratos.py):
+   só os campos em branco viraram preenchíveis.
+   Diferente do orçamento, campo vazio NÃO sai como "—": sai como espaço para
+   escrever à mão (célula vazia ou linha), porque o documento é impresso para o
+   cliente ou o motorista completar e assinar.
+   ============================================================ */
+// <textos-dos-contratos>  (gerado por _scripts/montar_contratos.py — não edite à mão)
+const CV_CLAUSULAS = [
+ [
+  "1. DAS PARTES E DO OBJETO",
+  [
+   "Pelo presente instrumento, de um lado, EOOSIN HOME WORLD MÓVEIS E DECORAÇÕES LTDA., pessoa jurídica de direito privado, inscrita no CNPJ nº 65.465.363/0001-48, com sede no endereço acima indicado, doravante denominada “EOOSIN”; e, de outro lado, o CLIENTE/CONSUMIDOR identificado no Quadro-Resumo, doravante denominado “CLIENTE”, celebram o presente Contrato de Compra e Venda de Móveis e Objetos de Decoração.",
+   "O objeto compreende os produtos descritos no Quadro-Resumo e/ou no Anexo I, incluindo, conforme aplicável, itens em estoque, adquiridos especificamente para atendimento do pedido, fabricados sob encomenda, importados ou personalizados segundo especificações aprovadas pelo CLIENTE."
+  ]
+ ],
+ [
+  "2. DOS PRODUTOS, ESPECIFICAÇÕES E ENCOMENDAS",
+  [
+   "As características específicas dos produtos - incluindo modelo, dimensões, materiais, revestimentos, tecidos, cores, acabamentos, quantidade e demais especificações - deverão constar do pedido, orçamento, projeto, ficha técnica, catálogo, desenho, imagem ou documento aprovado pelo CLIENTE.",
+   "O CLIENTE declara que conferiu as especificações do pedido. Nos produtos fabricados ou fornecidos de acordo com medidas por ele indicadas, será responsável pela exatidão dessas informações. Quando a medição for realizada pela EOOSIN ou profissional por ela indicado, a ficha técnica será submetida à aprovação do CLIENTE quando aplicável.",
+   "Produtos sob encomenda podem exigir fabricação, aquisição, importação, transporte, conferência e preparação. A exposição de produto em loja, catálogo ou material publicitário não significa disponibilidade da unidade adquirida para pronta entrega, salvo indicação expressa."
+  ]
+ ],
+ [
+  "3. DOS MATERIAIS NATURAIS E VARIAÇÕES",
+  [
+   "O CLIENTE declara ciência de que madeira, pedra, mármore, granito, couro, fibras naturais, tecidos e materiais semelhantes podem apresentar diferenças de tonalidade, textura, veios, desenhos, granulação e acabamento próprias da matéria-prima ou do processo artesanal. Quando compatíveis com a natureza do material e com as informações prestadas, tais características não serão consideradas, por si só, desconformidade.",
+   "Fotografias, imagens digitais, catálogos e mostruários podem apresentar pequenas diferenças de tonalidade em razão de iluminação, fotografia, configuração de tela ou lote. Quando tonalidade ou acabamento forem elementos essenciais da contratação, a EOOSIN apresentará, quando disponível, amostra ou referência específica."
+  ]
+ ],
+ [
+  "4. DO PREÇO E DAS CONDIÇÕES DE PAGAMENTO",
+  [
+   "O preço, frete e demais valores contratados serão aqueles indicados no Quadro-Resumo ou orçamento aprovado. Nenhuma cobrança adicional relativa a produto ou serviço não previsto será realizada sem prévia informação e aprovação do CLIENTE.",
+   "Poderá ser exigida entrada ou parcela inicial para confirmação do pedido. O prazo de fornecimento terá início após a compensação do pagamento inicial e a aprovação das especificações necessárias.",
+   "O atraso no pagamento poderá suspender a produção, importação ou entrega até a regularização, incidindo, quando aplicável, multa de 2% sobre a parcela vencida, juros de mora de 1% ao mês e correção monetária pelo IPCA ou índice que o substitua, observada a legislação aplicável."
+  ]
+ ],
+ [
+  "5. DA CONFIRMAÇÃO E DAS ALTERAÇÕES DO PEDIDO",
+  [
+   "Considera-se confirmado o pedido após a aprovação das especificações, o pagamento da entrada ou parcela inicial quando exigida, a disponibilização dos dados necessários e a aprovação de projeto, medidas ou acabamentos, quando aplicável.",
+   "Após a confirmação, a EOOSIN poderá iniciar a aquisição, fabricação, importação ou reserva do produto. Alterações solicitadas posteriormente dependerão de análise de viabilidade e poderão modificar preço e prazo. Nenhum acréscimo de preço será executado sem ciência e aprovação do CLIENTE."
+  ]
+ ],
+ [
+  "6. DO PRAZO DE FORNECIMENTO",
+  [
+   "O prazo de fornecimento será de até 90 (noventa) dias, salvo prazo diverso expressamente indicado no Quadro-Resumo, contado da confirmação definitiva do pedido. O período poderá compreender fabricação, aquisição, importação, transporte, desembaraço aduaneiro, conferência, preparação, agendamento e entrega.",
+   "A EOOSIN informará ao CLIENTE alterações relevantes na previsão originalmente apresentada. O prazo contratual não representa renúncia a direitos decorrentes de eventual descumprimento da oferta."
+  ]
+ ],
+ [
+  "7. DOS PRODUTOS IMPORTADOS",
+  [
+   "Quando o produto for importado, o prazo estimado poderá considerar fabricação no exterior, transporte internacional, desembaraço aduaneiro e transporte nacional. Fatos extraordinários e imprevisíveis relacionados ao transporte internacional, restrições de importação, retenções aduaneiras ou indisponibilidade excepcional do fabricante serão comunicados ao CLIENTE, com nova previsão quando possível, sem afastar a responsabilidade legal da EOOSIN."
+  ]
+ ],
+ [
+  "8. DO CANCELAMENTO",
+  [
+   "O cancelamento deverá ser solicitado por escrito, inclusive por meio eletrônico que permita comprovação. Nas contratações realizadas fora do estabelecimento comercial, será assegurado o direito de arrependimento quando presentes os requisitos do art. 49 do Código de Defesa do Consumidor.",
+   "Nas contratações presenciais, a desistência imotivada será analisada conforme as condições contratadas e o estágio de execução do pedido, não existindo, em regra, direito legal geral de arrependimento por simples mudança de vontade.",
+   "Quando não houver direito legal de arrependimento, vício, defeito, descumprimento da oferta ou causa imputável à EOOSIN, eventual cancelamento de produto especialmente encomendado, personalizado, fabricado, adquirido ou importado para o CLIENTE poderá sujeitar-se à multa de 20% sobre o valor total do contrato e à apuração dos custos específicos efetivamente comprovados, sempre observados proporcionalidade, boa-fé, equilíbrio contratual e a legislação de proteção ao consumidor.",
+   "Em caso de descumprimento da oferta ou do prazo por responsabilidade da EOOSIN, ficam assegurados ao CLIENTE os direitos previstos na legislação aplicável."
+  ]
+ ],
+ [
+  "9. DA ENTREGA, FRETE E CONDIÇÕES DE ACESSO",
+  [
+   "A entrega será realizada no endereço indicado no Quadro-Resumo. O CLIENTE deverá assegurar condições adequadas de acesso e providenciar previamente autorizações de condomínio, agendamento, reserva de elevador e demais exigências do local.",
+   "A entrega poderá ser realizada diretamente pela EOOSIN ou por transportadora por ela contratada. Nesse caso, o recebimento dos produtos será registrado no Termo de Entrega e Recebimento, emitido em documento apartado, apresentado pelo transportador no ato da entrega e assinado, física ou eletronicamente, pelo CLIENTE ou por pessoa por ele autorizada a receber os produtos no endereço de entrega.",
+   "O CLIENTE deverá informar a existência de escadas, corredores estreitos, elevadores reduzidos, restrições condominiais ou outras condições relevantes. Nova tentativa de entrega decorrente de circunstância imputável ao CLIENTE poderá gerar custo adicional previamente informado.",
+   "Serviços extraordinários eventualmente necessários para o acesso dos produtos ao local de entrega, como içamento, utilização de equipamentos especiais, transporte excepcional por escadas, remoção de portas, janelas ou esquadrias e adaptações não previstas, são de responsabilidade e custo exclusivos do CLIENTE, que deverá providenciá-los previamente à data agendada para a entrega. A EOOSIN não responde por danos decorrentes de serviços dessa natureza contratados pelo CLIENTE diretamente com terceiros."
+  ]
+ ],
+ [
+  "10. DO RECEBIMENTO E DA CONFERÊNCIA",
+  [
+   "No momento da entrega, o CLIENTE deverá, sempre que possível, conferir a quantidade de volumes, a integridade das embalagens e a correspondência aparente entre os produtos entregues e o pedido. Danos aparentes deverão, sempre que possível, ser registrados no Termo de Entrega e Recebimento apresentado pelo transportador e comunicados à EOOSIN.",
+   "A assinatura do Termo de Entrega e Recebimento não implica renúncia aos direitos relativos a vícios ou defeitos que não possam ser constatados mediante conferência ordinária. Caso o CLIENTE não esteja apto a receber o produto na data agendada, poderá haver novo agendamento e, quando previamente informado e legalmente cabível, custos de armazenagem ou nova entrega."
+  ]
+ ],
+ [
+  "11. DAS TROCAS, DEVOLUÇÕES E GARANTIA",
+  [
+   "As trocas, devoluções, substituições e procedimentos de assistência observarão este contrato, a Política de Trocas, Devoluções e Assistência ao Cliente EOOSIN vigente e a legislação aplicável.",
+   "Troca solicitada exclusivamente por conveniência do CLIENTE, sem vício, defeito, avaria ou desconformidade, dependerá de análise e aprovação prévia da EOOSIN, estado de conservação do produto e disponibilidade, podendo haver diferença de preço e custos logísticos previamente informados.",
+   "Produtos confeccionados, adquiridos ou importados especialmente para o CLIENTE, sob medida ou personalizados, não estarão sujeitos a troca por mera conveniência, ressalvadas as hipóteses legalmente asseguradas.",
+   "Os produtos observarão as garantias legais. Garantia contratual adicional oferecida pelo fabricante ou pela EOOSIN será complementar à garantia legal."
+  ]
+ ],
+ [
+  "12. DA ASSISTÊNCIA PÓS-VENDA",
+  [
+   "A EOOSIN disponibilizará canal para reclamações, assistência, garantia e informações sobre pedidos. Para facilitar a análise, recomenda-se o envio do número do pedido, descrição detalhada da ocorrência e, quando possível, fotografias ou vídeos, sem que isso constitua condição para o exercício de direitos legalmente assegurados."
+  ]
+ ],
+ [
+  "13. DAS COMPRAS REALIZADAS À DISTÂNCIA",
+  [
+   "Quando a contratação ocorrer por internet, WhatsApp, telefone ou outro meio que não caracterize contratação presencial no estabelecimento, serão observadas as normas aplicáveis às contratações fora do estabelecimento comercial, inclusive o direito de arrependimento quando legalmente cabível."
+  ]
+ ],
+ [
+  "14. DA PROTEÇÃO DE DADOS",
+  [
+   "A EOOSIN poderá tratar dados pessoais do CLIENTE para processamento da compra, emissão de nota fiscal, pagamento, entrega, assistência, garantia, atendimento e cumprimento de obrigações legais, nos termos da Lei Geral de Proteção de Dados - LGPD e demais normas aplicáveis."
+  ]
+ ],
+ [
+  "15. DAS DISPOSIÇÕES GERAIS, LEGISLAÇÃO E FORO",
+  [
+   "Integram a contratação, quando aplicáveis, o Quadro-Resumo, orçamento aprovado, Anexo I, ficha técnica, projeto ou desenho, especificações de medidas, amostras ou referências, termos de garantia, comprovantes de pagamento, Política de Trocas, Devoluções e Assistência ao Cliente e o Termo de Entrega e Recebimento, este emitido em documento apartado e assinado no ato da entrega.",
+   "As informações expressamente aprovadas no orçamento, pedido, projeto e documentos integrantes vinculam a contratação. Publicidade ou material meramente ilustrativo deverá ser interpretado em conjunto com as especificações efetivamente contratadas.",
+   "As partes reconhecem a validade das assinaturas eletrônicas e digitais, inclusive as realizadas com certificado digital emitido no âmbito da ICP-Brasil ou por meio de plataforma de assinatura eletrônica que permita comprovar autoria e integridade, nos termos da Medida Provisória nº 2.200-2/2001, aplicando-se o mesmo ao presente contrato, aos seus anexos e ao Termo de Entrega e Recebimento. Este contrato será regido pela legislação brasileira, especialmente pelo Código de Defesa do Consumidor e pelo Código Civil. Fica assegurado ao CLIENTE o foro que lhe seja legalmente garantido pela legislação de proteção ao consumidor.",
+   "Nenhuma disposição deste instrumento poderá ser interpretada como renúncia antecipada a direito assegurado por norma de ordem pública. As partes observarão os princípios da boa-fé, transparência, cooperação e equilíbrio contratual."
+  ]
+ ]
+];
+const CV_DECLARACAO = "O CLIENTE declara ter recebido informações essenciais relativas aos produtos, especificações, valores, condições de pagamento e prazo estimado de entrega, confirmando as condições expressamente estabelecidas neste instrumento, sem prejuízo dos direitos assegurados pela legislação vigente.";
+const TE_INTRO = "Documento complementar ao Contrato de Compra e Venda de Móveis e Objetos de Decoração, a ser apresentado pelo transportador no ato da entrega, assinado, física ou eletronicamente, pelo CLIENTE ou por pessoa por ele autorizada, e devolvido à EOOSIN.";
+const TE_DECLARACAO = [
+ "O CLIENTE, ou pessoa por ele autorizada, declara ter recebido os produtos e volumes acima relacionados, referentes ao contrato/pedido e à nota fiscal indicados, ressalvadas as observações registradas neste termo. A assinatura deste termo não implica renúncia aos direitos relativos a vícios ou defeitos que não possam ser constatados mediante conferência ordinária, nos termos do Código de Defesa do Consumidor.",
+ "Este termo poderá ser assinado fisicamente ou eletronicamente, inclusive com certificado digital ICP-Brasil ou plataforma de assinatura eletrônica, nos termos da MP nº 2.200-2/2001, com a mesma validade da assinatura física."
+];
+const CT_RODAPE = "EOOSIN HOME WORLD, Avenida Ayrton Senna, nº 2150, Bloco C, Loja 108, Barra da Tijuca, Rio de Janeiro/RJ, CEP 22775-900.";
+// </textos-dos-contratos>
+const CT_EMPRESA = {
+  nome: 'EOOSIN HOME WORLD', resto: 'MÓVEIS E DECORAÇÕES LTDA.', cnpj: '65.465.363/0001-48',
+  endereco: 'Avenida Ayrton Senna, nº 2150, Bloco C, Loja 108, Barra da Tijuca, Rio de Janeiro/RJ, CEP 22775-900.'
 };
+const CT_PRAZO = 'Até 90 dias, salvo prazo diverso indicado neste quadro';   // já vem escrito no quadro do Word
+const CT_ANEXO = 'Conforme Anexo I';
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+/* ---------- pedaços do documento ---------- */
+const cel = s => s ? esc(s) : '';                                     // célula vazia = escrever à mão
+const lin = (s, mm) => s ? `<span class="ct-val">${esc(s)}</span>` : `<i class="ln-in" style="width:${mm}"></i>`;
+const brl = s => { if(!s) return ''; const n = numDigitado(s); return n!=null ? BR(n) : String(s).replace(/^\s*R\$\s*/,''); };
+const rs  = s => 'R$ ' + esc(brl(s));
+const CK  = '<i class="ck"></i>';
+const dataExtenso = iso => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||'');
+  return m ? `${+m[3]} de ${MESES[+m[2]-1]} de ${m[1]}` : null;
+};
+
+function cabecalhoCt(c, titulo){
+  return `
+  <div class="dh">
+    <div class="brand">
+      ${LOGO}
+      <div class="tag">DESIGN &nbsp;•&nbsp; AUTENTICIDADE &nbsp;•&nbsp; SOFISTICAÇÃO</div>
+    </div>
+    <div class="co">
+      <h1>${CT_EMPRESA.nome}<small>${CT_EMPRESA.resto}</small></h1>
+      <ul>
+        <li>${IC.card}<span>CNPJ nº ${CT_EMPRESA.cnpj}</span></li>
+        <li>${IC.pin}<span>${CT_EMPRESA.endereco}</span></li>
+      </ul>
+    </div>
+    <div class="meta">
+      <div class="t">PEDIDO</div>
+      <div class="num">Nº ${c.num ? esc(c.num) : '<i class="ln-in" style="width:20mm"></i>'}</div>
+    </div>
+  </div>
+  <div class="ct-tit"><h2>${titulo}<small>DE MÓVEIS E OBJETOS DE DECORAÇÃO</small></h2></div>`;
+}
+const rodapeCt = () => `
+  <div class="grow"></div>
+  <div class="foot ct-foot"><div>${IC.pin}<span>${esc(CT_RODAPE)}</span></div></div>`;
+const tituloSec = (t, cls='') => `<div class="sec-t ct-h junto ${cls}"><h3>${t}</h3><i class="rule"></i></div>`;
+
+/* quadro em pares (rótulo, valor, rótulo, valor), na ordem do Word; o item que
+   ficaria sozinho na linha ocupa a linha inteira */
+function linhasQuadro(itens){
+  let out = '', fila = [];
+  const sozinho = p => `<tr><td class="k">${p.k}</td><td class="v" colspan="3">${p.v}</td></tr>`;
+  const flush = () => {
+    if(fila.length===2) out += `<tr>${fila.map(p=>`<td class="k">${p.k}</td><td class="v">${p.v}</td>`).join('')}</tr>`;
+    else if(fila.length===1) out += sozinho(fila[0]);
+    fila = [];
+  };
+  itens.forEach(p => {
+    if(p.wide){ flush(); out += sozinho(p); }
+    else { fila.push(p); if(fila.length===2) flush(); }
+  });
+  flush();
+  return out;
+}
+
+function docCV(c){
+  const quadro = linhasQuadro([
+    {k:'Contrato/Pedido nº', v:cel(c.num)},          {k:'Data da contratação', v:cel(c.data)},
+    {k:'Cliente', v:cel(c.cliente)},                 {k:'CPF/CNPJ', v:cel(c.doc)},
+    {k:'Endereço de entrega', v:cel(c.end), wide:true},
+    {k:'Produto(s)', v:cel(c.prod), wide:true},
+    {k:'Modelo/Referência', v:cel(c.modelo)},        {k:'Medidas', v:cel(c.medidas)},
+    {k:'Cor/Acabamento', v:cel(c.cor)},              {k:'Quantidade', v:cel(c.qtde)},
+    {k:'Valor dos produtos', v:rs(c.valProd)},       {k:'Frete', v:rs(c.frete)},
+    {k:'Valor total', v:rs(c.total)},                {k:'Entrada/primeiro pagamento', v:rs(c.entrada)},
+    {k:'Saldo', v:rs(c.saldo)},
+    {k:'Forma de pagamento', v:cel(c.pgto), wide:true},
+    {k:'Prazo de entrega', v:cel(c.prazo), wide:true},
+    {k:'Previsão de entrega', v:cel(c.prev)},        {k:'Vendedor(a)', v:cel(c.vend)},
+    {k:'Local da contratação', v:cel(c.local), wide:true}
+  ]);
+  const clausulas = CV_CLAUSULAS.map(([t, ps]) =>
+    tituloSec(esc(t)) + ps.map(p => `<p class="ct-p just">${esc(p)}</p>`).join('')).join('');
+  const data = dataExtenso(c.dataAss);
+  const dataLinha = data ? `<span class="ct-val">${data}</span>`
+    : `${lin('', '9mm')} de ${lin('', '32mm')} de ${lin('', '14mm')}`;
+  const nAnexo = Math.max(10, c.itens.length);
+  const anexo = Array.from({length:nAnexo}, (_, k) => {
+    const i = c.itens[k] || {};
+    return `<tr><td class="c">${String(k+1).padStart(2,'0')}</td><td class="v">${cel(i.produto)}</td>`+
+           `<td class="v">${cel(i.modelo)}</td><td class="c v">${cel(i.qtd)}</td><td class="v">${cel(i.cor)}</td>`+
+           `<td class="r v">${i.valor ? esc(brl(i.valor)) : ''}</td></tr>`;
+  }).join('');
+  const obs = c.obsTec ? `<div class="ct-txt">${esc(c.obsTec)}</div>`
+    : `<div class="ct-linhas">${'<div class="ln"></div>'.repeat(6)}</div>`;
+
+  return `
+<div class="doc" data-tipo="CONTRATO DE COMPRA E VENDA${c.num?' · PEDIDO':''}" data-num="${esc(c.num)}" data-cliente="${esc(c.cliente)}"><div class="doc-inner">
+  ${cabecalhoCt(c, 'CONTRATO DE COMPRA E VENDA')}
+
+  <table class="ct-tab">
+    <colgroup><col style="width:21%"><col style="width:29%"><col style="width:21%"><col style="width:29%"></colgroup>
+    <thead><tr class="junto"><th colspan="4">QUADRO-RESUMO DA CONTRATAÇÃO</th></tr></thead>
+    <tbody>${quadro}</tbody>
+  </table>
+
+  ${clausulas}
+
+  <div class="ct-blk">
+    ${tituloSec('DECLARAÇÃO E ASSINATURAS')}
+    <p class="ct-p just">${esc(CV_DECLARACAO)}</p>
+    <p class="ct-p" style="margin-top:3mm">Rio de Janeiro/RJ, ${dataLinha}.</p>
+    <div class="ct-ass">
+      <div>
+        <h5>EOOSIN HOME WORLD MÓVEIS E DECORAÇÕES LTDA.</h5>
+        <div class="assin"></div><div class="leg">Representante da EOOSIN</div>
+        <div class="f"><span class="k">Nome:</span><span class="v">${lin(c.repNome, '100%')}</span></div>
+        <div class="f"><span class="k">CPF:</span><span class="v">${lin(c.repCpf, '100%')}</span></div>
+      </div>
+      <div>
+        <h5>CLIENTE/CONSUMIDOR</h5>
+        <div class="assin"></div><div class="leg">Nome/Assinatura</div>
+        <div class="f"><span class="k">CPF/CNPJ:</span><span class="v">${lin(c.doc, '100%')}</span></div>
+      </div>
+    </div>
+  </div>
+
+  ${tituloSec('ANEXO I - ESPECIFICAÇÃO INDIVIDUAL DOS PRODUTOS', 'nova-folha')}
+  <table class="ct-tab">
+    <colgroup><col style="width:9%"><col><col style="width:19%"><col style="width:10%"><col style="width:18%"><col style="width:15%"></colgroup>
+    <thead><tr><th class="c">ITEM</th><th>PRODUTO</th><th>MODELO</th><th class="c">QTD.</th><th>COR/ACABAMENTO</th><th class="r">VALOR (R$)</th></tr></thead>
+    <tbody>${anexo}</tbody>
+  </table>
+  <div class="ct-blk">
+    <p class="ct-p"><b>Observações técnicas:</b></p>
+    ${obs}
+  </div>
+  ${rodapeCt()}
+</div></div>`;
+}
+
+function docTE(c){
+  const par = (a, b, x, y) => `<tr><td class="k">${a}</td><td class="v">${b}</td><td class="k">${x}</td><td class="v">${y}</td></tr>`;
+  const col4 = '<colgroup><col style="width:19%"><col style="width:31%"><col style="width:19%"><col style="width:31%"></colgroup>';
+  const nItens = Math.max(5, c.itens.length);
+  const itens = Array.from({length:nItens}, (_, k) => {
+    const i = c.itens[k] || {};
+    return `<tr><td class="c">${String(k+1).padStart(2,'0')}</td><td class="v">${cel(i.produto)}</td>`+
+           `<td class="v">${cel(i.modelo)}</td><td class="c v">${cel(i.qtd)}</td><td class="c v">${cel(i.volumes)}</td></tr>`;
+  }).join('');
+  const sn = `${CK}Sim ${CK}Não`;
+
+  return `
+<div class="doc" data-tipo="TERMO DE ENTREGA${c.num?' · PEDIDO':''}" data-num="${esc(c.num)}" data-cliente="${esc(c.cliente)}"><div class="doc-inner">
+  ${cabecalhoCt(c, 'TERMO DE ENTREGA E RECEBIMENTO')}
+  <p class="ct-p just" style="margin-bottom:2.4mm">${esc(TE_INTRO)}</p>
+
+  <table class="ct-tab">${col4}
+    <thead><tr class="junto"><th colspan="4">1. DADOS DO PEDIDO E DO CLIENTE</th></tr></thead>
+    <tbody>
+      ${par('Contrato/Pedido nº', cel(c.num), 'Nota Fiscal nº', cel(c.nf))}
+      ${par('Cliente', cel(c.cliente), 'CPF/CNPJ', cel(c.doc))}
+      ${par('Endereço de entrega', cel(c.end), 'Telefone', cel(c.fone))}
+    </tbody>
+  </table>
+
+  <table class="ct-tab">${col4}
+    <thead><tr class="junto"><th colspan="4">2. DADOS DO TRANSPORTE</th></tr></thead>
+    <tbody>
+      ${par('Transportadora', cel(c.transp), 'CNPJ', cel(c.transpCnpj))}
+      ${par('Motorista/Entregador', cel(c.motorista), 'RG/CPF', cel(c.motDoc))}
+      ${par('Placa do veículo', cel(c.placa), 'Data/hora da entrega', cel(c.dataHora))}
+    </tbody>
+  </table>
+
+  <table class="ct-tab">
+    <colgroup><col style="width:8%"><col><col style="width:22%"><col style="width:13%"><col style="width:14%"></colgroup>
+    <thead>
+      <tr class="junto"><th colspan="5">3. PRODUTOS ENTREGUES</th></tr>
+      <tr class="col junto"><th class="c">ITEM</th><th>PRODUTO / DESCRIÇÃO</th><th>REFERÊNCIA</th><th class="c">QTD.</th><th class="c">VOLUMES</th></tr>
+    </thead>
+    <tbody>${itens}</tbody>
+  </table>
+
+  ${tituloSec('4. CONFERÊNCIA NO ATO DO RECEBIMENTO')}
+  <p class="ct-p">Volumes conferem com a Nota Fiscal: ${sn} &nbsp;&nbsp;&nbsp;&nbsp; Embalagens íntegras: ${sn}
+    &nbsp;&nbsp;&nbsp;&nbsp; Fotos: ${sn}</p>
+  <p class="ct-p">Total de volumes entregues: ${lin('', '18mm')}</p>
+  <div class="ct-blk">
+    <p class="ct-p"><b>Observações e ressalvas do CLIENTE (avarias aparentes, volumes faltantes, divergências):</b></p>
+    <div class="ct-linhas"><div class="ln"></div><div class="ln"></div></div>
+  </div>
+
+  ${tituloSec('5. DECLARAÇÃO DE RECEBIMENTO')}
+  ${TE_DECLARACAO.map(p => `<p class="ct-p just">${esc(p)}</p>`).join('')}
+  <p class="ct-p" style="padding-top:1mm">Local e data: ${lin('', '48mm')}, ${lin('', '7mm')}/${lin('', '7mm')}/${lin('', '12mm')}
+    &nbsp;&nbsp;&nbsp;&nbsp; Forma de assinatura: ${CK}Física ${CK}Eletrônica</p>
+
+  <div class="ct-blk">
+    <div class="ct-ass">
+      <div>
+        <h5>RECEBEDOR</h5>
+        <div class="f"><span class="k">Assinatura:</span><span class="v"><i class="ln-in" style="width:100%;height:8mm"></i></span></div>
+        <div class="f"><span class="k">Nome legível:</span><span class="v">${lin('', '100%')}</span></div>
+        <div class="f"><span class="k">RG/CPF:</span><span class="v">${lin('', '100%')}</span></div>
+        <p class="ct-p" style="margin-top:1.6mm">${CK.replace('ck"','ck" style="margin-left:0"')}Próprio cliente &nbsp;&nbsp; ${CK}Pessoa autorizada</p>
+      </div>
+      <div>
+        <h5>TRANSPORTADOR / ENTREGADOR</h5>
+        <div class="f"><span class="k">Assinatura:</span><span class="v"><i class="ln-in" style="width:100%;height:8mm"></i></span></div>
+        <div class="f"><span class="k">Nome legível:</span><span class="v">${lin(c.motorista, '100%')}</span></div>
+        <div class="f"><span class="k">RG/CPF:</span><span class="v">${lin(c.motDoc, '100%')}</span></div>
+      </div>
+    </div>
+    <div class="ct-vias">1ª via: EOOSIN &nbsp;·&nbsp; 2ª via: Transportadora &nbsp;·&nbsp; 3ª via: Cliente</div>
+  </div>
+  ${rodapeCt()}
+</div></div>`;
+}
+
+/* ---------- painel ---------- */
+const CT_CAMPOS = {num:'kNum', data:'kData', nf:'kNF', cliente:'kCliente', doc:'kDoc', fone:'kFone', vend:'kVend',
+  end:'kEnd', prod:'kProd', modelo:'kModelo', medidas:'kMedidas', cor:'kCor', qtde:'kQtde', valProd:'kValProd',
+  frete:'kFrete', total:'kTotal', entrada:'kEntrada', saldo:'kSaldo', pgto:'kPgto', prazo:'kPrazo', prev:'kPrev',
+  local:'kLocal', dataAss:'kDataAss', repNome:'kRepNome', repCpf:'kRepCpf', obsTec:'kObsTec', transp:'kTransp',
+  transpCnpj:'kTranspCnpj', placa:'kPlaca', motorista:'kMotorista', motDoc:'kMotDoc', dataHora:'kDataHora'};
+const CT_ITEM = ['produto','modelo','qtd','cor','valor','volumes'];
+
+function lerContrato(){
+  const c = {};
+  Object.entries(CT_CAMPOS).forEach(([k, id]) => { c[k] = $('#'+id).value.trim(); });
+  c.itens = [...$('#ctItens').children].map(d => {
+    const i = {}; CT_ITEM.forEach(k => { i[k] = d.querySelector(`[data-k="${k}"]`).value.trim(); });
+    return i;
+  }).filter(i => Object.values(i).some(Boolean));
+  return c;
+}
+
+/* saldo = valor total − entrada, sempre calculado (o campo é só leitura) */
+function atualizarSaldo(){
+  const t = numDigitado($('#kTotal').value), e = numDigitado($('#kEntrada').value);
+  $('#kSaldo').value = (t!=null && e!=null) ? BR(Math.round((t-e)*100)/100) : '';
+}
+
+/* conferência do que foi digitado no quadro (só avisa, não muda nada) */
+function conferirCt(c){
+  const out = [], n = numDigitado;
+  [['valProd','Valor dos produtos'],['frete','Frete'],['total','Valor total'],['entrada','Entrada']].forEach(([k, rot]) => {
+    if(c[k] && n(c[k])==null) out.push(msg('warn', `<b>${rot}</b>: não consegui ler “${esc(c[k])}” como valor.`));
+  });
+  const p = n(c.valProd), fr = n(c.frete), t = n(c.total), e = n(c.entrada);
+  if(p!=null && t!=null && Math.abs(p + (fr||0) - t) > .005)
+    out.push(msg('warn', `Valor dos produtos + frete dá <b>R$ ${BR(p+(fr||0))}</b>, mas o valor total está `+
+                         `<b>R$ ${BR(t)}</b>. Confira.`));
+  if(e!=null && t!=null && e > t + .005) out.push(msg('err', 'A entrada é maior que o valor total.'));
+  const vals = c.itens.map(i => n(i.valor));
+  if(p!=null && vals.length && vals.every(v => v!=null)){
+    const soma = Math.round(vals.reduce((a,b)=>a+b, 0)*100)/100;
+    if(Math.abs(soma - p) > .005)
+      out.push(msg('warn', `A soma dos valores do Anexo I dá <b>R$ ${BR(soma)}</b>, e o valor dos produtos `+
+                           `está <b>R$ ${BR(p)}</b>. Confira.`));
+  }
+  $('#ctConf').innerHTML = out.join('');
+}
+
+let LAYOUT_CT = {paginas:1, escala:1};
+function desenharContrato(){
+  if(abaAtual !== 'ct') return;
+  atualizarSaldo();
+  const c = lerContrato();
+  scaler.innerHTML = ctAtual==='cv' ? docCV(c) : docTE(c);
+  $('#empty')?.remove();
+  LAYOUT_CT = paginar(scaler.firstElementChild, .91);
+  fit();
+  conferirCt(c);
+}
+let tCt = null;
+const desenharContratoLogo = () => { clearTimeout(tCt); tCt = setTimeout(desenharContrato, 200); };
+
+function numerarItensCt(){ [...$('#ctItens').children].forEach((d, k) => d.querySelector('.n').textContent = k+1); }
+function linhaItemCt(v = {}, auto = false){
+  const d = document.createElement('div');
+  d.className = 'ct-item';
+  const inp = (k, extra='') => `<input data-k="${k}" type="text" autocomplete="off" ${extra} value="${esc(v[k]??'')}"`+
+                               `${auto && v[k] ? ' class="auto"' : ''}>`;
+  d.innerHTML = `
+    <div class="l1"><span class="n"></span>${inp('produto','placeholder="Produto / descrição"')}
+      <button type="button" class="x" title="Remover produto">×</button></div>
+    <div class="l2">
+      <div class="campo m"><label>Modelo/Ref.</label>${inp('modelo')}</div>
+      <div class="campo"><label>Qtd.</label>${inp('qtd')}</div>
+      <div class="campo so-cv"><label>Cor/Acab.</label>${inp('cor')}</div>
+      <div class="campo so-cv"><label>Valor (R$)</label>${inp('valor','inputmode="decimal"')}</div>
+      <div class="campo so-te"><label>Volumes</label>${inp('volumes','inputmode="numeric"')}</div>
+    </div>`;
+  d.querySelector('.x').onclick = () => {
+    d.remove();
+    if(!$('#ctItens').children.length) linhaItemCt();
+    numerarItensCt(); desenharContratoLogo();
+  };
+  $('#ctItens').appendChild(d);
+  numerarItensCt();
+  return d;
+}
+
+/* zera os dois documentos (os campos são compartilhados entre eles) */
+function limparContrato(){
+  Object.values(CT_CAMPOS).forEach(id => { const el = $('#'+id); el.value = ''; el.classList.remove('auto'); });
+  $('#kPrazo').value = CT_PRAZO;
+  $('#ctItens').innerHTML = '';
+  linhaItemCt();
+  $('#ctStatus').innerHTML = ''; $('#ctConf').innerHTML = '';
+  $('#file3').value = '';
+}
+
+/* Carrega o pedido do sistema. Usa o mesmo leitor do Conversor, mas sem as fotos e sem
+   tocar no orçamento carregado (nem na caixa "Pedido?"). Só preenche o que veio no PDF;
+   o resto fica em branco. */
+async function carregarContratoPDF(f){
+  const st = $('#ctStatus');
+  if(!/\.pdf$/i.test(f.name)){ st.innerHTML = msg('err','Envie um arquivo <b>.pdf</b> exportado do sistema.'); return; }
+  st.innerHTML = msg('warn', `Lendo <b>${esc(f.name)}</b>…`);
+  let D;
+  try{
+    const pdf = await abrirPDF(new Uint8Array(await f.arrayBuffer()));
+    D = parseQuote(await readItems(pdf), []);
+  }catch(err){
+    console.error(err);
+    st.innerHTML = msg('err', `Não consegui ler o PDF: ${esc(err.message)}`);
+    return;
+  }
+  limparContrato();                 // PDF novo é pedido novo: nada do anterior fica
+  const R = D.resumo || {}, desp = D.desp || {frete:0, seguro:0, outras:0}, cl = D.cliente || {};
+  /* Valor total = Total da fatura do PDF (o que o cliente paga). O quadro só tem linha de
+     frete, então o valor dos produtos é o total menos o frete — e já inclui IPI e ST, como
+     o preço de etiqueta do orçamento. */
+  const total = R.fatura ?? D.totalFinal ?? null;
+  const produtos = total!=null ? Math.round((total - desp.frete)*100)/100 : null;
+  const qt = i => i.qtde!=null ? (BR(i.qtde,0)+' '+(i.un||'')).trim() : '';
+  const um = D.itens.length===1 ? D.itens[0] : null;
+  const put = (id, val) => { const el = $('#'+id); el.value = val ?? ''; el.classList.toggle('auto', !!el.value); };
+  put('kNum', D.numero); put('kData', D.data); put('kCliente', cl.razao); put('kDoc', cl.doc);
+  put('kFone', cl.fone); put('kVend', D.vendedor); put('kEnd', cl.endereco);
+  put('kPlaca', D.transporte?.placa);
+  if(D.itens.length){
+    put('kProd',   um ? um.descricao : CT_ANEXO);
+    put('kModelo', um ? um.codigo    : CT_ANEXO);
+    put('kQtde',   um ? qt(um)       : CT_ANEXO);
+  }
+  put('kValProd', produtos!=null ? BR(produtos) : '');
+  put('kFrete',   total!=null ? BR(desp.frete) : '');
+  put('kTotal',   total!=null ? BR(total) : '');
+  $('#ctItens').innerHTML = '';
+  D.itens.forEach(i => linhaItemCt({produto:i.descricao, modelo:i.codigo, qtd:qt(i),
+                                    valor:i.totalFinal!=null ? BR(i.totalFinal) : ''}, true));
+  if(!D.itens.length) linhaItemCt();
+
+  let out = msg('ok', `<b>${esc(f.name)}</b> carregado — ${D.itens.length} produto(s). Os campos em amarelo `+
+                      `vieram do PDF: confira antes de imprimir.`);
+  const faltam = [['Nº do pedido',D.numero],['Data',D.data],['Cliente',cl.razao],['CPF/CNPJ',cl.doc],
+                  ['Endereço',cl.endereco],['Telefone',cl.fone],['Vendedor(a)',D.vendedor],['Valor total',total]]
+                 .filter(([,x]) => x==null || x==='').map(([r]) => r);
+  if(faltam.length) out += msg('warn', `<b>Não vieram no PDF</b> (ficam para preencher):<br>${faltam.join(' · ')}`);
+  if(desp.seguro || desp.outras)
+    out += msg('warn', `O PDF tem <b>seguro/outras despesas</b> (R$ ${BR(desp.seguro + desp.outras)}). O quadro só tem `+
+                       `linha de frete, então elas estão somadas ao valor dos produtos.`);
+  if(D.itens.length && !D.temIpiPorItem)
+    out += msg('warn', `PDF no formato antigo: o IPI não vem por item, então os valores do Anexo I estão `+
+                       `<b>sem IPI</b> e não somam o valor dos produtos.`);
+  if(D._avisos?.length)
+    out += msg('err', `<b>Divergência nos números do sistema</b> — confira antes de imprimir:<br>${D._avisos.map(esc).join('<br>')}`);
+  st.innerHTML = out;
+  desenharContrato();
+}
+
+function nomeContrato(){
+  const cli = ($('#kCliente').value||'').trim().split(/\s+/).slice(0,3)
+              .map(w=>w.replace(/[^\wÀ-ÿ]/g,'')).filter(Boolean).join('_');
+  return `${ctAtual==='cv' ? 'Contrato' : 'Termo_Entrega'}_${cli||'CLIENTE'}.pdf`;
+}
+
+ligarDrop($('#drop3'), $('#file3'), carregarContratoPDF);
+$('#painelCt').addEventListener('input', e => {
+  if(e.target.id === 'file3') return;
+  e.target.classList.remove('auto');          // mexeu: já foi conferido
+  if(e.target.id === 'kTotal' || e.target.id === 'kEntrada') atualizarSaldo();
+  desenharContratoLogo();
+});
+$('#ctMais').onclick = () => { linhaItemCt().querySelector('input').focus(); };
+$('#ctLimpar').onclick = () => { limparContrato(); desenharContrato(); };
+$('#ctPdf').onclick = () => { clearTimeout(tCt); desenharContrato(); baixarPDF($('#ctPdf'), nomeContrato()); };
+limparContrato();
+
 </script>
 </body>
 </html>
