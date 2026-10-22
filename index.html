@@ -1077,7 +1077,13 @@ function parseQuote(items, fotos){
     const m = lData.text.match(/Data:\s*(\d{2}\/\d{2}\/\d{4})(?:\s*([\d:]{4,5}))?/);
     if(m){ D.data=m[1]; D.hora=m[2]||null; }
   }
-  const XR = 455;                                    // corte: coluna direita do cabeçalho
+  /* Venda com nota emitida: o cabeçalho traz "NF-e 001/000000016" (série/número), logo acima
+     de "Emitida em …". Só o termo de entrega usa (campo Nota Fiscal nº, como o sistema mostra);
+     orçamento ainda sem nota fica null. O rótulo "NF-e (Valor R$)" do RESUMO não casa: lá não
+     há série/número, e ele fica abaixo do cabeçalho. */
+  const lNfe = L.find(l => l.top < 95 && /NF-e\s+\d+\/\d+/.test(l.text));
+  D.nfe = lNfe ? lNfe.text.match(/NF-e\s+(\d+\/\d+)/)[1] : null;
+  const XR = 455;                                   // corte: coluna direita do cabeçalho
   const hl = L.filter(l=>l.top<95).map(l=>({l, left:join(l,0,XR)})).filter(o=>o.left);
   D.empresa.nome = hl.length ? hl[0].left : null;
   // a última linha com ":" encerra os rótulos; o que vier depois é o endereço
@@ -3171,7 +3177,7 @@ async function carregarContratoPDF(f){
   const qt = i => i.qtde!=null ? (BR(i.qtde,0)+' '+(i.un||'')).trim() : '';
   const um = D.itens.length===1 ? D.itens[0] : null;
   const put = (id, val) => { const el = $('#'+id); el.value = val ?? ''; el.classList.toggle('auto', !!el.value); };
-  put('kNum', D.numero); put('kData', D.data); put('kCliente', cl.razao); put('kDoc', cl.doc);
+  put('kNum', D.numero); put('kNF', D.nfe); put('kData', D.data); put('kCliente', cl.razao); put('kDoc', cl.doc);
   put('kFone', cl.fone); put('kVend', D.vendedor); put('kEnd', cl.endereco);
   put('kPlaca', D.transporte?.placa);
   if(D.itens.length){
@@ -3189,7 +3195,7 @@ async function carregarContratoPDF(f){
 
   let out = msg('ok', `<b>${esc(f.name)}</b> carregado — ${D.itens.length} produto(s). Os campos em amarelo `+
                       `vieram do PDF: confira antes de imprimir.`);
-  const faltam = [['Nº do pedido',D.numero],['Data',D.data],['Cliente',cl.razao],['CPF/CNPJ',cl.doc],
+  const faltam = [['Nº do pedido',D.numero],['Nota fiscal',D.nfe],['Data',D.data],['Cliente',cl.razao],['CPF/CNPJ',cl.doc],
                   ['Endereço',cl.endereco],['Telefone',cl.fone],['Vendedor(a)',D.vendedor],['Valor total',total]]
                  .filter(([,x]) => x==null || x==='').map(([r]) => r);
   if(faltam.length) out += msg('warn', `<b>Não vieram no PDF</b> (ficam para preencher):<br>${faltam.join(' · ')}`);
