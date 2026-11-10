@@ -814,7 +814,8 @@ table.ct-tab.dm-lin{margin-bottom:0}
         <div class="card so-te" style="margin-top:14px">
           <h2><i class="n">4</i> Dados do transporte</h2>
           <div class="form">
-            <div class="campo wide"><label for="kTransp">Transportadora</label><input id="kTransp" type="text" autocomplete="off"></div>
+            <div class="campo wide"><label for="kTransp">Transportadora</label><input id="kTransp" type="text" autocomplete="off">
+              <span class="chips"><button type="button" id="ctGfretes" title="Preenche transportadora e CNPJ">GFRETES</button></span></div>
             <div class="campo"><label for="kTranspCnpj">CNPJ</label><input id="kTranspCnpj" type="text" autocomplete="off"></div>
             <div class="campo"><label for="kPlaca">Placa do veículo</label><input id="kPlaca" type="text" autocomplete="off"></div>
             <div class="campo"><label for="kMotorista">Motorista/Entregador</label><input id="kMotorista" type="text" autocomplete="off"></div>
@@ -3782,6 +3783,14 @@ $('#painelCt').addEventListener('input', e => {
   desenharContratoLogo();
 });
 $('#ctMais').onclick = () => { linhaItemCt().querySelector('input').focus(); };
+/* a transportadora de sempre (pedido do Lucas, 10/11/2026): um clique preenche nome e CNPJ,
+   como os botões de IPI da calculadora. Continua editável. */
+const TRANSP_PADRAO = {nome:'GFRETES - SERVIÇOS DE TRANSPORTE LTDA', cnpj:'30.711.586/0001-63'};
+$('#ctGfretes').onclick = () => {
+  $('#kTransp').value = TRANSP_PADRAO.nome; $('#kTranspCnpj').value = TRANSP_PADRAO.cnpj;
+  $('#kTransp').classList.remove('auto'); $('#kTranspCnpj').classList.remove('auto');
+  desenharContrato();
+};
 $('#ctLimpar').onclick = () => { limparContrato(); desenharContrato(); };
 $('#ctPdf').onclick = () => { clearTimeout(tCt); desenharContrato(); baixarPDF($('#ctPdf'), nomeContrato()); };
 limparContrato();
