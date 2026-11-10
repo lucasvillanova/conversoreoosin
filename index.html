@@ -158,17 +158,17 @@ input[type=file]{display:none}
   font-size:13px;font-weight:600;color:var(--texto);user-select:none}
 .check input{width:16px;height:16px;margin:0;accent-color:var(--vinho);cursor:pointer}
 .campo label{font-size:10.5px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--texto-suave)}
-.campo input,.campo textarea{
+.campo input,.campo textarea,.campo select{
   width:100%;padding:8px 10px;border:1px solid var(--linha);border-radius:8px;
   font-family:inherit;font-size:13px;color:var(--texto);background:var(--off);transition:.15s;resize:vertical}
-.campo input:focus,.campo textarea:focus{outline:0;border-color:var(--vinho);background:#fff;
+.campo input:focus,.campo textarea:focus,.campo select:focus{outline:0;border-color:var(--vinho);background:#fff;
   box-shadow:0 0 0 3px rgba(78,10,9,.08)}
 .campo input::placeholder,.campo textarea::placeholder{color:#B9AAA8}
 .form-acoes{display:flex;gap:8px;margin-top:12px}
 .form-acoes .btn{margin:0}
 .form-acoes .btn-ghost{flex:0 0 96px}
 @media (max-width:980px) and (pointer:coarse){
-  .campo input,.campo textarea{font-size:16px;padding:11px 12px}  /* evita zoom automático no iOS */
+  .campo input,.campo textarea,.campo select{font-size:16px;padding:11px 12px}  /* evita zoom automático no iOS */
   .check{font-size:15px;padding:6px 0}
   .check input{width:22px;height:22px}
   #painelCalc .calc-tab input{font-size:16px}   /* evita zoom automático no iOS (vence a regra base, que vem depois) */
@@ -236,7 +236,10 @@ input[type=file]{display:none}
 .grid.ct{grid-template-columns:420px 1fr}
 @media(max-width:980px){.grid.ct{grid-template-columns:1fr}}
 #ladoOrc[hidden],#painelCt[hidden]{display:none!important}
-#painelCt[data-ct="cv"] .so-te,#painelCt[data-ct="te"] .so-cv{display:none!important}
+/* cada campo só aparece nos documentos das classes dele (so-cv, so-te, so-dm; pode ter mais de uma) */
+#painelCt[data-ct="cv"] :is(.so-te,.so-dm):not(.so-cv),
+#painelCt[data-ct="te"] :is(.so-cv,.so-dm):not(.so-te),
+#painelCt[data-ct="dm"] :is(.so-cv,.so-te):not(.so-dm){display:none!important}
 /* preenchido a partir do PDF: amarelo até alguém mexer, para conferir antes de imprimir */
 .campo input.auto,.campo textarea.auto,.ct-item input.auto{background:#FFF5CC;border-color:#E8C766}
 .campo input[readonly]{background:#F3EEEC;color:var(--texto-suave)}
@@ -499,6 +502,35 @@ table.ct-tab td.r{text-align:right;white-space:nowrap}
 .ct-ass .f .ln-in{width:100%}
 .ct-vias{text-align:center;font-size:6.4pt;color:var(--texto-suave);letter-spacing:.3px;margin-top:2.5mm}
 .foot.ct-foot{grid-template-columns:1fr}
+.ck.on{border-color:var(--vinho);color:var(--vinho)}
+.ck svg{width:100%;height:100%;display:block}
+.dh .meta .num small{display:block;font-size:6pt;font-weight:600;letter-spacing:.9px;color:var(--texto-suave);margin-bottom:1.1mm}
+table.ct-tab td.opc{font-weight:400}
+
+/* --- termo de demonstração em domicílio (10/11/2026) ---
+   Segue o PDF em que foi desenhado: as folhas são montadas uma a uma (docDM), cada uma com
+   297mm, cláusulas em duas colunas e, em TODA folha, o rodapé com o endereço e a rubrica.
+   Como cada folha já tem o tamanho do A4, paginarDownload não mexe nele (.paginado). */
+.doc.dm{height:auto;overflow:visible}
+.dm-folha{position:relative;height:297mm;padding:7mm 9mm 0;overflow:hidden;font-size:7.4pt;line-height:1.35;color:var(--texto)}
+.dm-folha:last-child{height:calc(297mm - 2px)}   /* nunca passar do corte: sobraria uma folha em branco */
+.dm-b{display:flow-root}
+.dm-cols{display:grid;grid-template-columns:1fr 1fr;column-gap:7mm;align-items:start}
+.dm-col{display:flow-root;min-width:0}
+.dm-cab{display:flex;justify-content:space-between;gap:4mm;font-size:6.6pt;font-weight:600;color:var(--vinho);
+  letter-spacing:.6px;padding-bottom:1.6mm;border-bottom:.3mm solid var(--linha);margin-bottom:3mm}
+.dm-pe{position:absolute;left:9mm;right:9mm;bottom:5mm;display:flex;justify-content:space-between;align-items:center;
+  gap:4mm;border-top:.3mm solid var(--linha);padding-top:2mm;font-size:6.3pt;color:#6e6566}
+.dm-pe span{display:flex;align-items:center;gap:1.4mm}
+.dm-pe svg{width:3mm;height:3mm;color:var(--vinho);flex:none}
+.dm-cl{font-size:7.7pt;font-weight:700;color:var(--vinho);letter-spacing:.3px;padding-top:1.4mm;margin-bottom:1.2mm}
+.dm-it{font-size:7.7pt;line-height:1.43;color:#3A3435;margin-bottom:1.5mm;text-align:justify}
+.dm-it .n{font-weight:600;color:var(--vinho)}
+.dm-it b{font-weight:600;color:#231e1f}
+.dm-it.sub{padding-left:2.4mm}
+.dm-hint{font-size:6pt;font-weight:400;color:var(--texto-suave)}
+.dm-nota{font-size:6.4pt;line-height:1.4;color:var(--texto-suave);margin-bottom:2.6mm}
+table.ct-tab.dm-lin{margin-bottom:0}
 .doc.multi .ct-p,.doc.multi .ct-blk,.doc.multi table.ct-tab tr,.doc.multi .ct-ass{break-inside:avoid;page-break-inside:avoid}
 
 /* ====================== IMPRESSÃO ====================== */
@@ -547,6 +579,7 @@ table.ct-tab td.r{text-align:right;white-space:nowrap}
       </button>
       <button type="button" class="sub" data-aba="ct" data-ct="cv"><span class="pre">Contratos · </span>Compra e venda</button>
       <button type="button" class="sub" data-aba="ct" data-ct="te"><span class="pre">Contratos · </span>Termo de entrega</button>
+      <button type="button" class="sub" data-aba="ct" data-ct="dm"><span class="pre">Contratos · </span>Termo de demonstração</button>
     </div>
   </nav>
 </aside>
@@ -700,19 +733,20 @@ table.ct-tab td.r{text-align:right;white-space:nowrap}
         <div class="card" style="margin-top:14px">
           <h2><i class="n">2</i> Pedido e cliente</h2>
           <div class="form">
-            <div class="campo"><label for="kNum">Contrato/Pedido nº</label><input id="kNum" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kNum"><span class="so-cv so-te">Contrato/Pedido nº</span><span class="so-dm">Orçamento nº</span></label><input id="kNum" type="text" autocomplete="off"></div>
             <div class="campo so-cv"><label for="kData">Data da contratação</label><input id="kData" type="text" autocomplete="off" placeholder="dd/mm/aaaa"></div>
             <div class="campo so-te"><label for="kNF">Nota Fiscal nº</label><input id="kNF" type="text" autocomplete="off"></div>
             <div class="campo wide"><label for="kCliente">Cliente</label><input id="kCliente" type="text" autocomplete="off"></div>
             <div class="campo"><label for="kDoc">CPF/CNPJ</label><input id="kDoc" type="text" autocomplete="off"></div>
-            <div class="campo so-te"><label for="kFone">Telefone</label><input id="kFone" type="text" autocomplete="off"></div>
+            <div class="campo so-te so-dm"><label for="kFone">Telefone</label><input id="kFone" type="text" autocomplete="off"></div>
             <div class="campo so-cv"><label for="kVend">Vendedor(a)</label><input id="kVend" type="text" autocomplete="off"></div>
-            <div class="campo wide"><label for="kEnd">Endereço de entrega</label><textarea id="kEnd" rows="2" autocomplete="off"></textarea></div>
+            <div class="campo so-dm"><label for="kEmail">E-mail</label><input id="kEmail" type="text" autocomplete="off"></div>
+            <div class="campo wide"><label for="kEnd"><span class="so-cv so-te">Endereço de entrega</span><span class="so-dm">Endereço da demonstração</span></label><textarea id="kEnd" rows="2" autocomplete="off"></textarea></div>
           </div>
         </div>
 
         <div class="card" style="margin-top:14px">
-          <h2><i class="n">3</i> <span class="so-cv">Produtos · Anexo I</span><span class="so-te">Produtos entregues</span></h2>
+          <h2><i class="n">3</i> <span class="so-cv">Produtos · Anexo I</span><span class="so-te">Produtos entregues</span><span class="so-dm">Produtos em demonstração</span></h2>
           <div class="ct-itens" id="ctItens"></div>
           <div class="links"><button type="button" class="link" id="ctMais">+ Adicionar produto</button></div>
         </div>
@@ -748,6 +782,32 @@ table.ct-tab td.r{text-align:right;white-space:nowrap}
             <div class="campo"><label for="kRepNome">Representante EOOSIN</label><input id="kRepNome" type="text" autocomplete="off" placeholder="Nome"></div>
             <div class="campo"><label for="kRepCpf">CPF do representante</label><input id="kRepCpf" type="text" autocomplete="off"></div>
             <div class="campo wide"><label for="kObsTec">Observações técnicas (Anexo I)</label><textarea id="kObsTec" rows="3" autocomplete="off"></textarea></div>
+          </div>
+        </div>
+
+        <div class="card so-dm" style="margin-top:14px">
+          <h2><i class="n">4</i> Cliente e visita</h2>
+          <div class="form">
+            <div class="campo"><label for="kRG">RG</label><input id="kRG" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kCondo">Condomínio/portaria</label><input id="kCondo" type="text" autocomplete="off"></div>
+            <div class="campo wide"><label for="kResp">Responsável presente</label><input id="kResp" type="text" autocomplete="off"
+                 placeholder="se não for o próprio cliente: nome e CPF"></div>
+            <div class="sep">Visita e equipe</div>
+            <div class="campo"><label for="kDataVisita">Data da visita</label><input id="kDataVisita" type="text" autocomplete="off" placeholder="dd/mm/aaaa"></div>
+            <div class="campo"><label for="kPedidaEm">Visita pedida em</label><input id="kPedidaEm" type="text" autocomplete="off" placeholder="dd/mm/aaaa"></div>
+            <div class="campo"><label for="kPedidoPor">Pedido feito por</label>
+              <select id="kPedidoPor"><option value="">—</option><option>Visita à loja</option><option>WhatsApp</option>
+                <option>Telefone</option><option>Arquiteto(a) / designer</option></select></div>
+            <div class="campo"><label for="kArq">Arquiteto(a) / designer</label><input id="kArq" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kChegada">Horário de chegada</label><input id="kChegada" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kRetirada">Retirada prevista</label><input id="kRetirada" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kRespEoosin">Responsável EOOSIN</label><input id="kRespEoosin" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kDmPlaca">Placa do veículo</label><input id="kDmPlaca" type="text" autocomplete="off"></div>
+            <div class="campo wide"><label for="kEquipe">Equipe presente</label><input id="kEquipe" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kCustos">Custos extras</label>
+              <select id="kCustos"><option value="">—</option><option value="nao">Não há</option><option value="sim">Aprovados pelo cliente</option></select></div>
+            <div class="campo"><label for="kCustosValor">Valor aprovado (R$)</label><input id="kCustosValor" type="text" inputmode="decimal" autocomplete="off"></div>
+            <div class="campo wide"><label for="kCustosDesc">Custos aprovados (descrição)</label><input id="kCustosDesc" type="text" autocomplete="off"></div>
           </div>
         </div>
 
@@ -2024,6 +2084,8 @@ $('#viewport').appendChild(scaler);
 function paginarDownload(doc, alturaPagina){
   // uma folha só: o documento já foi encaixado por paginar(), não há o que cortar
   if(doc.getBoundingClientRect().height <= alturaPagina + 1) return;
+  // o termo de demonstração já vem em folhas do tamanho do A4 (docDM): não há o que mexer
+  if(doc.classList.contains('paginado')) return;
 
   const PX = 96/25.4;
   /* As folhas seguintes ganham as mesmas margens que a primeira já tem: 7mm no
@@ -2662,11 +2724,22 @@ $('#btnPdf').onclick = ()=>{ if(DATA) baixarPDF($('#btnPdf'), nomeArquivo(DATA))
    justificado até a borda (text-align-last); só a última do parágrafo fica como estava.
    As palavras ficam exatamente onde estavam na tela. */
 function justificarLinhas(root){
+  /* O parágrafo inteiro passa a justificar até as linhas que terminam em <br>; só a última
+     linha vai para um bloco à parte, alinhada normalmente. O corte é feito por Range, que
+     divide direito um <b> que atravessa a quebra (o termo de demonstração tem negritos que
+     viram a linha) — cortar o HTML como texto deixava a segunda metade sem o negrito. */
   root.querySelectorAll('.just').forEach(p=>{
-    const partes = p.innerHTML.split(/<br\s*\/?>/i);
-    if(partes.length < 2) return;
-    p.innerHTML = partes.map((h,i)=>
-      `<span style="display:block;text-align-last:${i<partes.length-1?'justify':'auto'}">${h}</span>`).join('');
+    const brs = p.querySelectorAll('br');
+    if(!brs.length) return;
+    const ultimo = brs[brs.length-1];
+    const r = document.createRange();
+    r.setStartAfter(ultimo); r.setEnd(p, p.childNodes.length);
+    const fim = document.createElement('span');
+    fim.style.cssText = 'display:block;text-align-last:auto';
+    fim.appendChild(r.extractContents());
+    ultimo.remove();
+    p.appendChild(fim);
+    p.style.textAlignLast = 'justify';
   });
 }
 
@@ -2837,6 +2910,280 @@ const TE_DECLARACAO = [
  "Este termo poderá ser assinado fisicamente ou eletronicamente, inclusive com certificado digital ICP-Brasil ou plataforma de assinatura eletrônica, nos termos da MP nº 2.200-2/2001, com a mesma validade da assinatura física."
 ];
 const CT_RODAPE = "EOOSIN HOME WORLD, Avenida Ayrton Senna, nº 2150, Bloco C, Loja 108, Barra da Tijuca, Rio de Janeiro/RJ, CEP 22775-900.";
+// termo de demonstração em domicílio: do PDF; nas cláusulas, [número, HTML com <b>]
+const DM_INTRO = "Documento a ser apresentado pela equipe da EOOSIN na visita de demonstração solicitada pelo CLIENTE, assinado, física ou eletronicamente, pelo CLIENTE ou por pessoa por ele autorizada, na chegada da equipe (seção 6) e após a vistoria final (seção 8). As condições da demonstração estão na seção 5.";
+const DM_NOTA = "Valor de referência: preço de venda vigente na data da visita, usado somente para os fins da cláusula 7. Sem observação, os produtos foram entregues em perfeito estado.";
+const DM_CLAUSULAS = [
+ [
+  "CLÁUSULA 1 · DO OBJETO",
+  [
+   [
+    "1.1",
+    "Este Termo regula a demonstração, no endereço indicado na seção 1, dos produtos listados na seção 3 (“Produtos”), para que o CLIENTE avalie medidas, cores, acabamentos, conforto e composição com o ambiente."
+   ],
+   [
+    "1.2",
+    "A demonstração foi <b>solicitada expressamente pelo CLIENTE</b>, conforme a seção 2, e é gratuita. Ela não constitui venda, locação, consignação, doação nem obrigação de compra."
+   ],
+   [
+    "1.3",
+    "Os Produtos continuam de <b>propriedade exclusiva da EOOSIN</b> durante toda a demonstração e são transportados com o documento fiscal exigido pela legislação."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 2 · DO AGENDAMENTO, DO PRAZO E DA RETIRADA",
+  [
+   [
+    "2.1",
+    "A demonstração acontece em uma única visita: a equipe da EOOSIN entrega, posiciona e <b>retira os Produtos no mesmo dia</b>, ao final da visita."
+   ],
+   [
+    "2.2",
+    "Os Produtos não permanecem no imóvel após a saída da equipe. A permanência só será admitida em caráter excepcional, por <b>autorização escrita de representante da EOOSIN</b>, em adendo a este Termo com data e horário de retirada. Nesse caso, o CLIENTE fica com a guarda dos Produtos, deve conservá-los como se fossem seus (Código Civil, art. 582) e responde por perda, dano, furto ou roubo até a retirada, inclusive por caso fortuito ou força maior, que assume expressamente (Código Civil, art. 393)."
+   ],
+   [
+    "2.3",
+    "Se o CLIENTE impedir ou dificultar a retirada no horário combinado, arcará com os custos de nova visita e com os danos decorrentes do atraso, sem prejuízo das medidas legais para a EOOSIN reaver os Produtos."
+   ],
+   [
+    "2.4",
+    "O CLIENTE pagará <b>taxa de deslocamento de R$ 800,00 (oitocentos reais)</b> se cancelar a visita com menos de 12 (doze) horas de antecedência, se não houver ninguém para receber a equipe no horário agendado, ou se a demonstração não puder ser feita por informação incorreta ou incompleta sobre o local (cláusula 3.4). Se a EOOSIN cancelar a visita com menos de 12 horas de antecedência, sem motivo de força maior, reagendará a visita na data de preferência do CLIENTE."
+   ],
+   [
+    "2.5",
+    "A demonstração é gratuita na <b>cidade do Rio de Janeiro</b>. Fora dela, o custo de deslocamento é informado ao CLIENTE e aprovado por ele antes do agendamento, com registro na seção 2."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 3 · DO LOCAL DA DEMONSTRAÇÃO",
+  [
+   [
+    "3.1",
+    "É <b>responsabilidade do CLIENTE informar à EOOSIN, antes da visita, as características do local da demonstração</b>, entre elas:"
+   ],
+   [
+    "a)",
+    "tipo de imóvel e andar, existência e medidas internas do elevador de serviço, escadas, rampas e degraus no trajeto;"
+   ],
+   [
+    "b)",
+    "medidas de portões, portas, corredores e vãos por onde os Produtos vão passar;"
+   ],
+   [
+    "c)",
+    "distância entre o local de descarga e a área de montagem, e as condições de estacionamento do veículo;"
+   ],
+   [
+    "d)",
+    "regras e horários do condomínio, taxas cobradas por ele e qualquer restrição de acesso;"
+   ],
+   [
+    "e)",
+    "pisos e revestimentos sensíveis, presença de animais e qualquer risco existente no local."
+   ],
+   [
+    "3.2",
+    "Cabe também ao CLIENTE, antes da visita, obter as autorizações do condomínio ou da portaria, reservar o elevador de serviço e a vaga para descarga e liberar o trajeto e a área de montagem, retirando previamente objetos frágeis, de valor ou de estimação, como obras de arte, eletrônicos, louças e tapetes delicados."
+   ],
+   [
+    "3.3",
+    "<b>Os custos extras de transporte e movimentação</b> exigidos pelas características do local são <b>de responsabilidade do CLIENTE</b>, tais como içamento por fora do prédio, uso de guincho ou equipamento especial, carregadores adicionais, transporte por escada, desmontagem e remontagem especiais, estacionamento e taxas do condomínio. A EOOSIN informa ao CLIENTE os custos extras e o valor estimado, e eles só são executados depois de aprovados por ele, com registro na seção 2."
+   ],
+   [
+    "3.4",
+    "Se as características do local forem informadas de forma incorreta ou incompleta, o CLIENTE responde pelos custos daí decorrentes, inclusive os de nova visita, e a equipe poderá deixar de realizar a demonstração."
+   ],
+   [
+    "3.5",
+    "Se o acesso se mostrar inviável ou inseguro, a equipe poderá deixar de realizar a demonstração, sem responsabilidade para a EOOSIN, e a visita poderá ser reagendada."
+   ],
+   [
+    "3.6",
+    "A equipe não realiza serviços alheios à demonstração, como furar paredes, fixar peças ou mexer em instalações elétricas e hidráulicas, nem movimenta objetos frágeis ou de valor do CLIENTE."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 4 · DO MANUSEIO E USO",
+  [
+   [
+    "4.1",
+    "Transporte, montagem, posicionamento, desmontagem e retirada são feitos <b>exclusivamente pela equipe da EOOSIN</b>. O CLIENTE e terceiros não devem arrastar, desmontar ou mudar os Produtos de lugar."
+   ],
+   [
+    "4.2",
+    "O uso se limita à experimentação normal, como sentar, tocar, abrir e fechar, conforme a orientação da equipe. É vedado subir nos Produtos; apoiar sobre eles objetos pesados, quentes, molhados ou cortantes; consumir alimentos ou bebidas sobre eles; aplicar produtos de limpeza; ou expô-los a água ou condições não indicadas para o produto."
+   ],
+   [
+    "4.3",
+    "O CLIENTE é responsável por supervisionar crianças, animais, convidados e funcionários do imóvel enquanto os Produtos estiverem no local."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 5 · DA VISTORIA E DAS FOTOS",
+  [
+   [
+    "5.1",
+    "Na chegada, antes da montagem, as partes conferem o estado dos Produtos (seção 3) e do trajeto e da área de montagem (seção 4). Na retirada, fazem a vistoria final (seção 7)."
+   ],
+   [
+    "5.2",
+    "O CLIENTE autoriza a equipe a fotografar e filmar os Produtos, o trajeto e a área de montagem, <b>exclusivamente para registrar o seu estado</b>. As imagens não serão divulgadas, servirão apenas como prova, e a equipe evitará registrar pessoas e objetos pessoais."
+   ],
+   [
+    "5.3",
+    "O CLIENTE deve apontar na vistoria final qualquer dano que perceber no imóvel ou em seus bens. Dano não aparente nesse momento deve ser comunicado à EOOSIN assim que percebido, com fotos, pelo WhatsApp (21) 99173-0940."
+   ],
+   [
+    "5.4",
+    "Quando necessário, a equipe protege o trajeto e a área de montagem com mantas, papelão ou cantoneiras, e registra as proteções usadas na seção 4."
+   ],
+   [
+    "5.5",
+    "A responsabilidade da EOOSIN pela visita termina com a saída da equipe do imóvel, no horário registrado na seção 7."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 6 · DA RESPONSABILIDADE DA EOOSIN",
+  [
+   [
+    "6.1",
+    "A EOOSIN responde pelos danos que sua equipe causar ao imóvel ou aos bens do CLIENTE durante a visita e se compromete a repará-los ou indenizá-los."
+   ],
+   [
+    "6.2",
+    "A EOOSIN não responde por danos decorrentes de:"
+   ],
+   [
+    "a)",
+    "culpa exclusiva do CLIENTE ou de terceiros, inclusive o uso contrário às orientações deste Termo;"
+   ],
+   [
+    "b)",
+    "informações incorretas ou omitidas pelo CLIENTE sobre acesso, medidas e riscos do local;"
+   ],
+   [
+    "c)",
+    "condições preexistentes do imóvel não informadas, como pisos soltos, revestimentos danificados, infiltrações ou instalações ocultas;"
+   ],
+   [
+    "d)",
+    "caso fortuito ou força maior."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 7 · DA RESPONSABILIDADE DO CLIENTE",
+  [
+   [
+    "7.1",
+    "O CLIENTE responde pelos danos causados aos Produtos, como riscos, manchas, rasgos, quebras, odores, pelos ou marcas, por ele, moradores, convidados, funcionários, crianças ou animais sob sua responsabilidade, desde a entrega até a retirada."
+   ],
+   [
+    "7.2",
+    "A indenização corresponde ao <b>custo de reparo ou restauração</b>, comprovado por orçamento ou laudo com fotos. Se o dano for irreparável ou impedir a venda do Produto como novo, a indenização será o <b>valor de referência da seção 3</b>, e o Produto danificado passa a ser do CLIENTE após o pagamento."
+   ],
+   [
+    "7.3",
+    "O pagamento será feito em até 10 (dez) dias contados da apresentação do orçamento ou do laudo. A taxa da cláusula 2.4 e os custos aprovados nas cláusulas 2.5 e 3.3 seguem o mesmo prazo, contado da cobrança."
+   ],
+   [
+    "7.4",
+    "O atraso em qualquer pagamento deste Termo sujeita o CLIENTE a <b>multa de 2% (dois por cento), juros de mora de 1% (um por cento) ao mês</b> e correção monetária pelo IPCA, até o pagamento."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 8 · DAS CONDIÇÕES COMERCIAIS",
+  [
+   [
+    "8.1",
+    "Os valores da seção 3 servem apenas aos fins deste Termo. Preços, prazos e condições de venda só valem quando constarem em orçamento ou pedido formal emitido pela EOOSIN."
+   ],
+   [
+    "8.2",
+    "Em caso de compra, o CLIENTE recebe um produto novo do mesmo modelo, salvo se o pedido previr expressamente a compra da peça demonstrada. Pequenas variações naturais de tonalidade, veios e textura entre lotes de madeira, pedra, couro e tecidos são próprias desses materiais."
+   ],
+   [
+    "8.3",
+    "Na compra feita fora do estabelecimento, o CLIENTE tem o direito de arrependimento de 7 (sete) dias previsto no art. 49 do Código de Defesa do Consumidor."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 9 · DA SEGURANÇA E DA CONDUTA",
+  [
+   [
+    "9.1",
+    "A equipe da EOOSIN estará identificada, e os nomes de seus integrantes constam na seção 2."
+   ],
+   [
+    "9.2",
+    "O CLIENTE, ou o responsável maior de 18 anos indicado na seção 1, acompanha toda a visita. A equipe pode pedir um documento de identificação com foto de quem assina este Termo."
+   ],
+   [
+    "9.3",
+    "O <b>responsável que assinar no lugar do CLIENTE declara ter autorização dele</b> para receber a equipe e assinar este Termo em seu nome. O CLIENTE fica obrigado por tudo o que o responsável assinar e responde pelos atos dele durante a visita."
+   ],
+   [
+    "9.4",
+    "Recomenda-se que joias, dinheiro, documentos e outros objetos de valor fiquem guardados fora do trajeto e da área da demonstração."
+   ],
+   [
+    "9.5",
+    "Qualquer das partes pode encerrar a visita a qualquer momento se houver risco à segurança de pessoas ou bens, sem penalidade. Nesse caso, os Produtos são retirados e a vistoria final é feita normalmente."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 10 · DA PROTEÇÃO DE DADOS",
+  [
+   [
+    "10.1",
+    "Os dados pessoais deste Termo e as imagens da cláusula 5 são tratados apenas para agendar e realizar a demonstração, contatar o CLIENTE, cumprir obrigações fiscais e legais e defender direitos da EOOSIN (Lei nº 13.709/2018, art. 7º, II, V e VI)."
+   ],
+   [
+    "10.2",
+    "Os dados são guardados pelo tempo necessário a essas finalidades e não são vendidos nem cedidos, salvo a autoridades ou a prestadores indispensáveis, como transporte e contabilidade."
+   ],
+   [
+    "10.3",
+    "O CLIENTE pode pedir acesso, correção ou eliminação dos seus dados pelo WhatsApp (21) 99173-0940, observados os prazos legais de guarda."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 11 · DAS DISPOSIÇÕES GERAIS",
+  [
+   [
+    "11.1",
+    "A tolerância de uma parte com o descumprimento de qualquer cláusula não significa renúncia nem alteração deste Termo."
+   ],
+   [
+    "11.2",
+    "Se alguma cláusula for considerada inválida, as demais continuam válidas."
+   ],
+   [
+    "11.3",
+    "Qualquer alteração deste Termo só vale por escrito, assinada pelas partes."
+   ],
+   [
+    "11.4",
+    "Este Termo poderá ser assinado fisicamente ou eletronicamente, inclusive com certificado digital ICP-Brasil ou plataforma de assinatura eletrônica, nos termos da MP nº 2.200-2/2001, com a mesma validade da assinatura física."
+   ],
+   [
+    "11.5",
+    "Fica eleito o foro da Comarca da Capital do Estado do Rio de Janeiro, ressalvado o direito do CLIENTE de propor ação no foro do seu domicílio (Código de Defesa do Consumidor, art. 101, I)."
+   ]
+  ]
+ ]
+];
+const DM_DECL_CHEGADA = "O CLIENTE, ou pessoa por ele autorizada, declara que leu as condições da seção 5, esclareceu suas dúvidas com a equipe da EOOSIN, concorda com elas, confere como corretas as informações das seções 1 a 4 e recebe uma via deste Termo. A assinatura é feita antes da montagem dos Produtos.";
+const DM_DECL_ENCERRAMENTO = "As partes declaram que a vistoria final foi feita em conjunto e que a seção 7 corresponde ao que foi constatado no momento da retirada dos Produtos. Esta declaração não impede a comunicação de dano não aparente, na forma da cláusula 5.3, nem implica renúncia a direitos previstos no Código de Defesa do Consumidor.";
 // </textos-dos-contratos>
 const CT_EMPRESA = {
   nome: 'EOOSIN HOME WORLD', resto: 'MÓVEIS E DECORAÇÕES LTDA.', cnpj: '65.465.363/0001-48',
@@ -2857,7 +3204,7 @@ const dataExtenso = iso => {
   return m ? `${+m[3]} de ${MESES[+m[2]-1]} de ${m[1]}` : null;
 };
 
-function cabecalhoCt(c, titulo){
+function cabecalhoCt(c, titulo, rotulo='PEDIDO', legenda=''){
   return `
   <div class="dh">
     <div class="brand">
@@ -2872,8 +3219,8 @@ function cabecalhoCt(c, titulo){
       </ul>
     </div>
     <div class="meta">
-      <div class="t">PEDIDO</div>
-      <div class="num">Nº ${c.num ? esc(c.num) : '<i class="ln-in" style="width:20mm"></i>'}</div>
+      <div class="t">${rotulo}</div>
+      <div class="num">${legenda ? `<small>${legenda}</small>` : ''}Nº ${c.num ? esc(c.num) : '<i class="ln-in" style="width:20mm"></i>'}</div>
     </div>
   </div>
   <div class="ct-tit"><h2>${titulo}<small>DE MÓVEIS E OBJETOS DE DECORAÇÃO</small></h2></div>`;
@@ -3061,8 +3408,11 @@ const CT_CAMPOS = {num:'kNum', data:'kData', nf:'kNF', cliente:'kCliente', doc:'
   end:'kEnd', prod:'kProd', modelo:'kModelo', medidas:'kMedidas', cor:'kCor', qtde:'kQtde', valProd:'kValProd',
   frete:'kFrete', total:'kTotal', entrada:'kEntrada', saldo:'kSaldo', pgto:'kPgto', prazo:'kPrazo', prev:'kPrev',
   local:'kLocal', dataAss:'kDataAss', repNome:'kRepNome', repCpf:'kRepCpf', obsTec:'kObsTec', transp:'kTransp',
-  transpCnpj:'kTranspCnpj', placa:'kPlaca', motorista:'kMotorista', motDoc:'kMotDoc', dataHora:'kDataHora'};
-const CT_ITEM = ['produto','modelo','qtd','cor','valor','volumes'];
+  transpCnpj:'kTranspCnpj', placa:'kPlaca', motorista:'kMotorista', motDoc:'kMotDoc', dataHora:'kDataHora',
+  email:'kEmail', rg:'kRG', condo:'kCondo', resp:'kResp', dataVisita:'kDataVisita', pedidaEm:'kPedidaEm',
+  pedidoPor:'kPedidoPor', arq:'kArq', chegada:'kChegada', retirada:'kRetirada', respEoosin:'kRespEoosin',
+  dmPlaca:'kDmPlaca', equipe:'kEquipe', custos:'kCustos', custosValor:'kCustosValor', custosDesc:'kCustosDesc'};
+const CT_ITEM = ['produto','modelo','qtd','cor','valor','volumes','vref'];
 
 function lerContrato(){
   const c = {};
@@ -3106,9 +3456,15 @@ function desenharContrato(){
   if(abaAtual !== 'ct') return;
   atualizarSaldo();
   const c = lerContrato();
-  scaler.innerHTML = ctAtual==='cv' ? docCV(c) : docTE(c);
   $('#empty')?.remove();
-  LAYOUT_CT = paginar(scaler.firstElementChild, .91);
+  if(ctAtual === 'dm'){                         // folhas montadas por docDM, sem encaixe
+    const r = docDM(c);
+    scaler.innerHTML = r.html;
+    LAYOUT_CT = {paginas:r.paginas, escala:1};
+  } else {
+    scaler.innerHTML = ctAtual==='cv' ? docCV(c) : docTE(c);
+    LAYOUT_CT = paginar(scaler.firstElementChild, .91);
+  }
   fit();
   conferirCt(c);
 }
@@ -3130,6 +3486,7 @@ function linhaItemCt(v = {}, auto = false){
       <div class="campo so-cv"><label>Cor/Acab.</label>${inp('cor')}</div>
       <div class="campo so-cv"><label>Valor (R$)</label>${inp('valor','inputmode="decimal"')}</div>
       <div class="campo so-te"><label>Volumes</label>${inp('volumes','inputmode="numeric"')}</div>
+      <div class="campo so-dm"><label>Valor ref./un.</label>${inp('vref','inputmode="decimal"')}</div>
     </div>`;
   d.querySelector('.x').onclick = () => {
     d.remove();
@@ -3178,7 +3535,7 @@ async function carregarContratoPDF(f){
   const um = D.itens.length===1 ? D.itens[0] : null;
   const put = (id, val) => { const el = $('#'+id); el.value = val ?? ''; el.classList.toggle('auto', !!el.value); };
   put('kNum', D.numero); put('kNF', D.nfe); put('kData', D.data); put('kCliente', cl.razao); put('kDoc', cl.doc);
-  put('kFone', cl.fone); put('kVend', D.vendedor); put('kEnd', cl.endereco);
+  put('kFone', cl.fone); put('kVend', D.vendedor); put('kEnd', cl.endereco); put('kEmail', cl.email);
   put('kPlaca', D.transporte?.placa);
   if(D.itens.length){
     put('kProd',   um ? um.descricao : CT_ANEXO);
@@ -3189,35 +3546,235 @@ async function carregarContratoPDF(f){
   put('kFrete',   total!=null ? BR(desp.frete) : '');
   put('kTotal',   total!=null ? BR(total) : '');
   $('#ctItens').innerHTML = '';
+  /* vref (termo de demonstração): o preço un. CHEIO do orçamento — por unidade, com IPI e sem
+     desconto, o mesmo da coluna "Preço un. cheio" — em 2 casas, decidido com o Lucas (10/11/2026) */
   D.itens.forEach(i => linhaItemCt({produto:i.descricao, modelo:i.codigo, qtd:qt(i),
-                                    valor:i.totalFinal!=null ? BR(i.totalFinal) : ''}, true));
+                                    valor:i.totalFinal!=null ? BR(i.totalFinal) : '',
+                                    vref:i.precoCheioUn!=null ? BR(i.precoCheioUn) : ''}, true));
   if(!D.itens.length) linhaItemCt();
 
   let out = msg('ok', `<b>${esc(f.name)}</b> carregado — ${D.itens.length} produto(s). Os campos em amarelo `+
                       `vieram do PDF: confira antes de imprimir.`);
   const faltam = [['Nº do pedido',D.numero],['Nota fiscal',D.nfe],['Data',D.data],['Cliente',cl.razao],['CPF/CNPJ',cl.doc],
-                  ['Endereço',cl.endereco],['Telefone',cl.fone],['Vendedor(a)',D.vendedor],['Valor total',total]]
+                  ['Endereço',cl.endereco],['Telefone',cl.fone],['Vendedor(a)',D.vendedor],['Valor total',total],
+                  ...(ctAtual==='dm' ? [['E-mail',cl.email]] : [])]
                  .filter(([,x]) => x==null || x==='').map(([r]) => r);
   if(faltam.length) out += msg('warn', `<b>Não vieram no PDF</b> (ficam para preencher):<br>${faltam.join(' · ')}`);
   if(desp.seguro || desp.outras)
     out += msg('warn', `O PDF tem <b>seguro/outras despesas</b> (R$ ${BR(desp.seguro + desp.outras)}). O quadro só tem `+
                        `linha de frete, então elas estão somadas ao valor dos produtos.`);
   if(D.itens.length && !D.temIpiPorItem)
-    out += msg('warn', `PDF no formato antigo: o IPI não vem por item, então os valores do Anexo I estão `+
-                       `<b>sem IPI</b> e não somam o valor dos produtos.`);
+    out += msg('warn', `PDF no formato antigo: o IPI não vem por item, então os valores do Anexo I e o valor `+
+                       `de referência do termo de demonstração estão <b>sem IPI</b>.`);
   if(D._avisos?.length)
     out += msg('err', `<b>Divergência nos números do sistema</b> — confira antes de imprimir:<br>${D._avisos.map(esc).join('<br>')}`);
   st.innerHTML = out;
   desenharContrato();
 }
 
+/* ---------- termo de demonstração em domicílio (10/11/2026) ----------
+   Só existe em PDF (Contratos/Termo de Demonstração em Domicílio - EOOSIN.pdf), que já foi
+   desenhado no visual daqui; o Lucas pediu o documento igual a ele. Por isso, diferente dos
+   outros dois, as folhas são montadas aqui mesmo: os blocos são medidos fora da tela e
+   distribuídos em folhas de 297mm, com as cláusulas em duas colunas (esquerda, depois
+   direita) e, em todas as folhas, o rodapé com o endereço e "Rubrica do cliente ____ · n/N".
+   Mudanças decididas com o Lucas: o número é o do orçamento ("TERMO DO ORÇAMENTO Nº") e a
+   coluna de valor diz que ele é POR UNIDADE (a cláusula 7.2 indeniza peça por peça). */
+const DM_RODAPE = 'EOOSIN HOME WORLD, Av. Ayrton Senna, nº 2150, Bloco C, Loja 108, Barra da Tijuca, Rio de Janeiro/RJ';
+const DM_TITULO = 'TERMO DE DEMONSTRAÇÃO EM DOMICÍLIO';
+const DM_PEDIDO_POR = ['Visita à loja', 'WhatsApp', 'Telefone', 'Arquiteto(a) / designer'];
+const CK_ON = '<i class="ck on"><svg viewBox="0 0 12 12"><path d="M2.6 6.4l2.3 2.3 4.6-5" fill="none" stroke="currentColor" '+
+              'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></i>';
+const ck = marcado => marcado ? CK_ON : CK;
+const DM_COLS = '<colgroup><col style="width:7%"><col><col style="width:15%"><col style="width:8%">'+
+                '<col style="width:14%"><col style="width:19%"></colgroup>';
+const DM_COLCAB = '<tr class="col"><th class="c">ITEM</th><th>PRODUTO / DESCRIÇÃO</th><th>REFERÊNCIA</th>'+
+                  '<th class="c">QTD.</th><th class="r">VALOR DE REF.<br>POR UNIDADE (R$)</th><th>ESTADO NA CHEGADA</th></tr>';
+
+/* quadro de assinatura (seções 6 e 8): o nome legível vem preenchido só quando foi digitado */
+function assinaturaDM(titulo, nome, depois=''){
+  return `<div>
+        <h5>${titulo}</h5>
+        <div class="f"><span class="k">Assinatura:</span><span class="v"><i class="ln-in" style="width:100%;height:8mm"></i></span></div>
+        <div class="f"><span class="k">Nome legível:</span><span class="v">${lin(nome, '100%')}</span></div>
+        <div class="f"><span class="k">RG/CPF:</span><span class="v">${lin('', '100%')}</span></div>${depois}
+      </div>`;
+}
+
+/* a sequência de blocos do documento, na ordem do PDF. `col`: vai para as duas colunas;
+   `folhaNova`: abre folha nova; `cab`: o que repetir no topo se o bloco abrir uma folha */
+function blocosDM(c){
+  const B = [];
+  const par   = (a, b, x, y) => `<tr><td class="k">${a}</td><td class="v">${b}</td><td class="k">${x}</td><td class="v">${y}</td></tr>`;
+  const larga = (a, b, cls='') => `<tr><td class="k">${a}</td><td class="v ${cls}" colspan="3">${b}</td></tr>`;
+  const tab   = (titulo, linhas) => `<table class="ct-tab"><colgroup><col style="width:19%"><col style="width:31%">`+
+    `<col style="width:19%"><col style="width:31%"></colgroup><thead><tr class="junto"><th colspan="4">${titulo}</th></tr></thead>`+
+    `<tbody>${linhas}</tbody></table>`;
+  const sp = ' &nbsp;&nbsp; ';
+
+  B.push({html: cabecalhoCt(c, DM_TITULO, 'TERMO', 'DO ORÇAMENTO') +
+          `<p class="ct-p just" style="margin-bottom:2.4mm">${esc(DM_INTRO)}</p>`});
+
+  B.push({html: tab('1. DADOS DO CLIENTE',
+    par('Cliente', cel(c.cliente), 'CPF/CNPJ', cel(c.doc)) +
+    par('RG', cel(c.rg), 'Telefone', cel(c.fone)) +
+    par('E-mail', cel(c.email), 'Condomínio/portaria', cel(c.condo)) +
+    larga('Endereço da demonstração', cel(c.end)) +
+    larga('Responsável presente', c.resp ? esc(c.resp) : '<span class="dm-hint">se não for o próprio cliente: nome e CPF</span>'))});
+
+  const pedidoPor = DM_PEDIDO_POR.map((o, k) => `${k ? sp : ''}${ck(c.pedidoPor === o)}${o}` +
+                      (k === 3 ? `: ${lin(c.arq, '30mm')}` : '')).join('');
+  const custos = `${ck(c.custos === 'nao')}Não há${sp}${ck(c.custos === 'sim')}Aprovados pelo cliente: ${lin(c.custosDesc, '52mm')}` +
+                 `${sp}R$ ${lin(c.custosValor ? brl(c.custosValor) : '', '18mm')}`;
+  B.push({html: tab('2. DADOS DA VISITA E DA EQUIPE',
+    par('Data da visita', cel(c.dataVisita), 'Visita pedida em', cel(c.pedidaEm)) +
+    larga('Pedido feito por', pedidoPor, 'opc') +
+    par('Horário de chegada', cel(c.chegada), 'Retirada prevista', cel(c.retirada)) +
+    par('Responsável EOOSIN', cel(c.respEoosin), 'Placa do veículo', cel(c.dmPlaca)) +
+    larga('Equipe presente', cel(c.equipe)) +
+    larga('Custos extras <span class="dm-hint">(cl. 2.5 e 3.3)</span>', custos, 'opc'))});
+
+  /* produtos: uma tabela por linha (mesmas colunas), para poderem virar a folha uma a uma;
+     a primeira leva a faixa e o cabeçalho, as outras repetem o cabeçalho se abrirem folha */
+  const nLin = Math.max(5, c.itens.length);
+  for(let k = 0; k < nLin; k++){
+    const i = c.itens[k] || {};
+    const linha = `<tr><td class="c">${String(k+1).padStart(2,'0')}</td><td class="v">${cel(i.produto)}</td>`+
+                  `<td class="v">${cel(i.modelo)}</td><td class="c v">${cel(i.qtd)}</td>`+
+                  `<td class="r v">${i.vref ? esc(brl(i.vref)) : ''}</td><td></td></tr>`;
+    const cab = k ? '' : `<tr class="junto"><th colspan="6">3. PRODUTOS EM DEMONSTRAÇÃO</th></tr>${DM_COLCAB}`;
+    B.push({html: `<table class="ct-tab dm-lin">${DM_COLS}${cab ? `<thead>${cab}</thead>` : ''}<tbody>${linha}</tbody></table>`,
+            cab: k ? `<table class="ct-tab dm-lin">${DM_COLS}<thead>${DM_COLCAB}</thead></table>` : ''});
+  }
+  B.push({html: `<p class="dm-nota" style="margin-top:1.4mm">${esc(DM_NOTA)}</p>`});
+
+  B.push({html: tituloSec('4. CONFERÊNCIA NA CHEGADA') +
+    `<p class="ct-p">Trajeto e área de montagem sem avarias aparentes: ${CK}Sim ${CK}Não${sp}${sp}Fotos de chegada: ${CK}Sim ${CK}Não</p>`+
+    `<p class="ct-p">Proteção do trajeto: ${CK}Mantas ou papelão no piso ${CK}Paredes e cantos ${CK}Não foi necessária</p>`+
+    `<p class="ct-p"><b>Avarias preexistentes no imóvel (trajeto e área de montagem):</b></p>`+
+    `<div class="ct-linhas"><div class="ln"></div><div class="ln"></div></div>`});
+
+  // 5. condições: folha nova, faixa e as cláusulas em duas colunas
+  B.push({folhaNova:true, html: '<table class="ct-tab"><thead><tr><th>5. CONDIÇÕES DA DEMONSTRAÇÃO</th></tr></thead></table>'});
+  const item = ([n, h]) => `<p class="dm-it just${/^[a-z]\)$/.test(n) ? ' sub' : ''}"><span class="n">${esc(n)}</span> ${h}</p>`;
+  DM_CLAUSULAS.forEach(([titulo, itens]) => {
+    // o título de cláusula nunca fica sozinho no pé da coluna: vai junto com o primeiro item
+    B.push({col:true, html: `<p class="dm-cl">${esc(titulo)}</p>` + item(itens[0])});
+    itens.slice(1).forEach(it => B.push({col:true, html: item(it)}));
+  });
+
+  const cliente = assinaturaDM('CLIENTE OU PESSOA AUTORIZADA', '',
+    `<p class="ct-p" style="margin-top:1.6mm">${CK.replace('ck"','ck" style="margin-left:0"')}Próprio cliente ${CK}Pessoa autorizada (cl. 9.3)</p>`);
+  B.push({html: tituloSec('6. DECLARAÇÃO NA CHEGADA') + `<p class="ct-p just">${esc(DM_DECL_CHEGADA)}</p>` +
+    `<div class="ct-ass">${cliente.replace('</p>\n      </div>',
+        `</p><p class="ct-p">Documento conferido: ${CK}RG ${CK}CNH ${CK}Outro</p>\n      </div>`)}` +
+    `${assinaturaDM('EOOSIN · RESPONSÁVEL PELA EQUIPE', c.respEoosin)}</div>`});
+
+  B.push({folhaNova:true, html: tab('7. VISTORIA FINAL E ENCERRAMENTO',
+            par('Retirada dos produtos às', '', 'Saída da equipe às', '')) +
+    `<p class="ct-p">Todos os produtos foram retirados: ${CK}Sim ${CK}Não · adendo nº ${lin('', '16mm')}</p>`+
+    `<p class="ct-p">Estado dos produtos: ${CK}Sem alterações ${CK}Com alterações (descrever abaixo)</p>`+
+    `<p class="ct-p">Imóvel e bens do cliente: ${CK}Nenhum dano apontado ${CK}Danos apontados (descrever abaixo)</p>`+
+    `<p class="ct-p">Fotos de retirada: ${CK}Sim ${CK}Não</p>`+
+    `<p class="ct-p"><b>Observações e ressalvas (alterações nos produtos, danos apontados pelo CLIENTE, divergências):</b></p>`+
+    `<div class="ct-linhas"><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>`});
+
+  B.push({html: tituloSec('8. DECLARAÇÃO DE ENCERRAMENTO') + `<p class="ct-p just">${esc(DM_DECL_ENCERRAMENTO)}</p>` +
+    `<p class="ct-p" style="padding-top:1mm">Local e data: ${lin('', '48mm')}, ${lin('', '7mm')}/${lin('', '7mm')}/${lin('', '12mm')}`+
+    `${sp}${sp}Forma de assinatura: ${CK}Física ${CK}Eletrônica</p>` +
+    `<div class="ct-ass">${cliente}${assinaturaDM('EOOSIN · RESPONSÁVEL PELA EQUIPE', c.respEoosin)}`+
+    `${assinaturaDM('TESTEMUNHA 1', '')}${assinaturaDM('TESTEMUNHA 2', '')}</div>` +
+    `<div class="ct-vias">1ª via: EOOSIN &nbsp;·&nbsp; 2ª via: Cliente</div>`});
+  return B;
+}
+
+/* mede cada bloco fora da tela e distribui em folhas; devolve o HTML e o nº de folhas */
+function docDM(c){
+  const PX = 96/25.4, blocos = blocosDM(c);
+  const med = document.createElement('div');
+  med.className = 'doc dm';
+  med.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
+  med.innerHTML = '<div class="dm-folha" style="height:auto"><div></div>'+
+                  '<div class="dm-cols"><div class="dm-col"></div><div class="dm-col"></div></div></div>';
+  document.body.appendChild(med);
+  const cheio = med.querySelector('.dm-folha > div'), coluna = med.querySelector('.dm-col');
+  const alt = (html, emCol) => {
+    const alvo = emCol ? coluna : cheio;
+    alvo.innerHTML = `<div class="dm-b">${html}</div>`;
+    return alvo.firstElementChild.getBoundingClientRect().height;
+  };
+  const num = c.num ? esc(c.num) : '____________';
+  const cabCont = `<div class="dm-cab"><span>EOOSIN HOME WORLD · ${DM_TITULO}</span><span>TERMO DO ORÇAMENTO Nº ${num}</span></div>`;
+  const hCab = alt(cabCont, false);
+  /* altura útil: 297mm − 7mm de margem no topo − 17mm do rodapé (que fica a 5mm do pé) */
+  const CAP = (297 - 7 - 17) * PX;
+
+  const folhas = [];
+  let f;
+  const nova = () => { f = {partes:[], usado: folhas.length ? hCab : 0, cols:null}; folhas.push(f); };
+  const vazia = () => f.partes.length === 0;
+  /* Fechando as colunas porque as cláusulas acabaram (e não porque a folha encheu), as duas
+     são equilibradas, como no PDF original: sem isso a esquerda descia até o pé, não sobrava
+     lugar para a seção 6 embaixo e o termo ganhava uma 5ª folha. */
+  const fechaCols = (equilibrar = false) => {
+    const k = f.cols;
+    if(!k) return;
+    if(equilibrar){
+      const todos = [...k.esq, ...k.dir], total = todos.reduce((s, x) => s + x.h, 0);
+      let melhor = todos.length, menor = Infinity, acum = 0;
+      todos.forEach((x, i) => {
+        acum += x.h;
+        const alto = Math.max(acum, total - acum);
+        if(alto < menor - .5){ menor = alto; melhor = i + 1; }
+      });
+      k.esq = todos.slice(0, melhor); k.dir = todos.slice(melhor);
+      k.hE = k.esq.reduce((s, x) => s + x.h, 0); k.hD = total - k.hE;
+    }
+    f.usado += Math.max(k.hE, k.hD); f.cols = null;
+  };
+  const abreCols = () => { f.cols = {esq:[], dir:[], hE:0, hD:0, lado:'esq'}; f.partes.push({cols:f.cols}); };
+  nova();
+  for(const b of blocos){
+    if(b.folhaNova && !vazia()){ fechaCols(); nova(); }
+    if(!b.col){
+      fechaCols(true);
+      let html = b.html, h = alt(html, false);
+      if(f.usado + h > CAP && !vazia()) nova();
+      if(vazia() && b.cab){ html = b.cab + b.html; h = alt(html, false); }
+      f.partes.push({html}); f.usado += h;
+      continue;
+    }
+    const h = alt(b.html, true);
+    if(!f.cols) abreCols();
+    if(f.cols.lado === 'esq' && f.usado + f.cols.hE + h > CAP) f.cols.lado = 'dir';
+    if(f.cols.lado === 'dir' && f.usado + f.cols.hD + h > CAP){ fechaCols(); nova(); abreCols(); }
+    const k = f.cols;
+    k[k.lado].push({html:b.html, h});
+    if(k.lado === 'esq') k.hE += h; else k.hD += h;
+  }
+  med.remove();
+
+  const N = folhas.length;
+  const bloco = h => `<div class="dm-b">${h}</div>`;
+  const html = folhas.map((fo, k) => `<div class="dm-folha">${k ? cabCont : ''}${fo.partes.map(p => p.cols
+      ? `<div class="dm-cols"><div class="dm-col">${p.cols.esq.map(x => bloco(x.html)).join('')}</div>`+
+        `<div class="dm-col">${p.cols.dir.map(x => bloco(x.html)).join('')}</div></div>`
+      : bloco(p.html)).join('')}
+    <div class="dm-pe"><span>${IC.pin}${esc(DM_RODAPE)}</span><span>Rubrica do cliente ________ · ${k+1}/${N}</span></div></div>`).join('');
+  return {paginas:N, html:`<div class="doc dm paginado" data-tipo="TERMO DE DEMONSTRAÇÃO" data-num="${esc(c.num)}" `+
+                          `data-cliente="${esc(c.cliente)}">${html}</div>`};
+}
+
 function nomeContrato(){
   const cli = ($('#kCliente').value||'').trim().split(/\s+/).slice(0,3)
               .map(w=>w.replace(/[^\wÀ-ÿ]/g,'')).filter(Boolean).join('_');
-  return `${ctAtual==='cv' ? 'Contrato' : 'Termo_Entrega'}_${cli||'CLIENTE'}.pdf`;
+  return `${({cv:'Contrato', te:'Termo_Entrega', dm:'Termo_Demonstracao'})[ctAtual]}_${cli||'CLIENTE'}.pdf`;
 }
 
 ligarDrop($('#drop3'), $('#file3'), carregarContratoPDF);
+$('#painelCt').addEventListener('change', e => {     // as listas (select) não disparam "input" em todo navegador
+  if(e.target.tagName === 'SELECT'){ e.target.classList.remove('auto'); desenharContratoLogo(); }
+});
 $('#painelCt').addEventListener('input', e => {
   if(e.target.id === 'file3') return;
   e.target.classList.remove('auto');          // mexeu: já foi conferido
