@@ -237,9 +237,10 @@ input[type=file]{display:none}
 @media(max-width:980px){.grid.ct{grid-template-columns:1fr}}
 #ladoOrc[hidden],#painelCt[hidden]{display:none!important}
 /* cada campo só aparece nos documentos das classes dele (so-cv, so-te, so-dm; pode ter mais de uma) */
-#painelCt[data-ct="cv"] :is(.so-te,.so-dm):not(.so-cv),
-#painelCt[data-ct="te"] :is(.so-cv,.so-dm):not(.so-te),
-#painelCt[data-ct="dm"] :is(.so-cv,.so-te):not(.so-dm){display:none!important}
+#painelCt[data-ct="cv"] :is(.so-te,.so-dm,.so-gt):not(.so-cv),
+#painelCt[data-ct="te"] :is(.so-cv,.so-dm,.so-gt):not(.so-te),
+#painelCt[data-ct="dm"] :is(.so-cv,.so-te,.so-gt):not(.so-dm),
+#painelCt[data-ct="gt"] :is(.so-cv,.so-te,.so-dm):not(.so-gt){display:none!important}
 /* preenchido a partir do PDF: amarelo até alguém mexer, para conferir antes de imprimir */
 .campo input.auto,.campo textarea.auto,.ct-item input.auto{background:#FFF5CC;border-color:#E8C766}
 .campo input[readonly]{background:#F3EEEC;color:var(--texto-suave)}
@@ -536,6 +537,20 @@ table.ct-tab td.opc{font-weight:400}
 .dm-hint{font-size:6pt;font-weight:400;color:var(--texto-suave)}
 .dm-nota{font-size:6.4pt;line-height:1.4;color:var(--texto-suave);margin-bottom:2.6mm}
 table.ct-tab.dm-lin{margin-bottom:0}
+/* --- termo de garantia (13/11/2026): os dois cartões do topo, o quadro da cl. 9 e o guia --- */
+.gt-cards{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin-bottom:3mm}
+.gt-card{background:var(--bege);border:.35mm solid var(--linha);border-left:1.2mm solid var(--vinho);border-radius:1.6mm;padding:2mm 3mm}
+.gt-card em{display:block;font-style:normal;font-size:6.2pt;font-weight:700;letter-spacing:.8px;color:var(--vinho);margin-bottom:1mm}
+.gt-card .lin{display:flex;align-items:center;gap:3mm}
+.gt-card .num{flex:none;font-size:19pt;font-weight:700;color:var(--vinho);line-height:1}
+.gt-card .num small{font-size:8.5pt;margin-left:1mm;letter-spacing:.5px}
+.gt-card span{font-size:6.8pt;line-height:1.35;color:#4A3C3B}
+.gt-rot{color:#6B5B58;font-size:6.8pt}
+.gt-box{background:var(--bege);border:.35mm solid var(--vinho-claro);border-radius:1.8mm;padding:2.6mm 3.2mm;margin-bottom:3mm}
+.gt-box .dm-it{margin-bottom:2mm}
+.gt-aceite{display:flex;justify-content:space-between;align-items:flex-end;gap:5mm;font-size:7.2pt;color:var(--texto);padding-top:1mm}
+table.ct-tab.gt-guia td{font-size:6.6pt;line-height:1.35;vertical-align:top;font-weight:400}
+table.ct-tab.gt-guia td.gt-mat{font-weight:700;color:var(--vinho)}
 .doc.multi .ct-p,.doc.multi .ct-blk,.doc.multi table.ct-tab tr,.doc.multi .ct-ass{break-inside:avoid;page-break-inside:avoid}
 
 /* ====================== IMPRESSÃO ====================== */
@@ -585,6 +600,7 @@ table.ct-tab.dm-lin{margin-bottom:0}
       <button type="button" class="sub" data-aba="ct" data-ct="cv"><span class="pre">Contratos · </span>Compra e venda</button>
       <button type="button" class="sub" data-aba="ct" data-ct="te"><span class="pre">Contratos · </span>Termo de entrega</button>
       <button type="button" class="sub" data-aba="ct" data-ct="dm"><span class="pre">Contratos · </span>Termo de demonstração</button>
+      <button type="button" class="sub" data-aba="ct" data-ct="gt"><span class="pre">Contratos · </span>Termo de garantia</button>
     </div>
   </nav>
 </aside>
@@ -738,20 +754,20 @@ table.ct-tab.dm-lin{margin-bottom:0}
         <div class="card" style="margin-top:14px">
           <h2><i class="n">2</i> Pedido e cliente</h2>
           <div class="form">
-            <div class="campo"><label for="kNum"><span class="so-cv so-te">Contrato/Pedido nº</span><span class="so-dm">Orçamento nº</span></label><input id="kNum" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kNum"><span class="so-cv so-te">Contrato/Pedido nº</span><span class="so-dm">Orçamento nº</span><span class="so-gt">Pedido nº</span></label><input id="kNum" type="text" autocomplete="off"></div>
             <div class="campo so-cv"><label for="kData">Data da contratação</label><input id="kData" type="text" autocomplete="off" placeholder="dd/mm/aaaa"></div>
-            <div class="campo so-te"><label for="kNF">Nota Fiscal nº</label><input id="kNF" type="text" autocomplete="off"></div>
+            <div class="campo so-te so-gt"><label for="kNF">Nota Fiscal nº</label><input id="kNF" type="text" autocomplete="off"></div>
             <div class="campo wide"><label for="kCliente">Cliente</label><input id="kCliente" type="text" autocomplete="off"></div>
             <div class="campo"><label for="kDoc">CPF/CNPJ</label><input id="kDoc" type="text" autocomplete="off"></div>
-            <div class="campo so-te so-dm"><label for="kFone">Telefone</label><input id="kFone" type="text" autocomplete="off"></div>
+            <div class="campo so-te so-dm so-gt"><label for="kFone">Telefone</label><input id="kFone" type="text" autocomplete="off"></div>
             <div class="campo so-cv"><label for="kVend">Vendedor(a)</label><input id="kVend" type="text" autocomplete="off"></div>
-            <div class="campo so-dm"><label for="kEmail">E-mail</label><input id="kEmail" type="text" autocomplete="off"></div>
-            <div class="campo wide"><label for="kEnd"><span class="so-cv so-te">Endereço de entrega</span><span class="so-dm">Endereço da demonstração</span></label><textarea id="kEnd" rows="2" autocomplete="off"></textarea></div>
+            <div class="campo so-dm so-gt"><label for="kEmail">E-mail</label><input id="kEmail" type="text" autocomplete="off"></div>
+            <div class="campo wide"><label for="kEnd"><span class="so-cv so-te so-gt">Endereço de entrega</span><span class="so-dm">Endereço da demonstração</span></label><textarea id="kEnd" rows="2" autocomplete="off"></textarea></div>
           </div>
         </div>
 
         <div class="card" style="margin-top:14px">
-          <h2><i class="n">3</i> <span class="so-cv">Produtos · Anexo I</span><span class="so-te">Produtos entregues</span><span class="so-dm">Produtos em demonstração</span></h2>
+          <h2><i class="n">3</i> <span class="so-cv">Produtos · Anexo I</span><span class="so-te">Produtos entregues</span><span class="so-dm">Produtos em demonstração</span><span class="so-gt">Produtos e prazos de garantia</span></h2>
           <div class="ct-itens" id="ctItens"></div>
           <div class="links"><button type="button" class="link" id="ctMais">+ Adicionar produto</button></div>
         </div>
@@ -814,6 +830,30 @@ table.ct-tab.dm-lin{margin-bottom:0}
             <div class="campo"><label for="kCustosValor">Valor aprovado (R$)</label><input id="kCustosValor" type="text" inputmode="decimal" autocomplete="off"></div>
             <div class="campo wide"><label for="kCustosDesc">Custos aprovados (descrição)</label><input id="kCustosDesc" type="text" autocomplete="off"></div>
           </div>
+        </div>
+
+        <div class="card so-gt" style="margin-top:14px">
+          <h2><i class="n">4</i> Entrega, local e assinatura</h2>
+          <div class="form">
+            <div class="campo"><label for="kgTermo">Termo de Entrega nº</label><input id="kgTermo" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kgEntrega">Data de entrega</label><input id="kgEntrega" type="text" autocomplete="off" placeholder="dd/mm/aaaa"></div>
+            <div class="sep">Local e uso informados pelo cliente</div>
+            <div class="campo wide"><label for="kgExpo">Exposição</label>
+              <select id="kgExpo"><option value="">—</option><option>Área externa coberta</option><option>Área externa descoberta</option>
+                <option>Varanda fechada / área interna</option></select></div>
+            <div class="campo"><label for="kgMar">Distância do mar</label>
+              <select id="kgMar"><option value="">—</option><option>Até 1 km (frente-mar)</option><option>De 1 a 5 km</option>
+                <option>Mais de 5 km</option></select></div>
+            <div class="campo"><label for="kgPiscina">Próximo a piscina</label>
+              <select id="kgPiscina"><option value="">—</option><option>Sim</option><option>Não</option></select></div>
+            <div class="campo wide"><label for="kgUso">Tipo de uso</label>
+              <select id="kgUso"><option value="">—</option><option>Residencial</option><option>Comercial / hospitalidade</option></select></div>
+            <div class="sep">Assinatura da EOOSIN</div>
+            <div class="campo"><label for="kgNome">Nome legível</label><input id="kgNome" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="kgCargo">Cargo</label><input id="kgCargo" type="text" autocomplete="off"></div>
+          </div>
+          <div class="hint">O que ficar em branco sai para marcar ou preencher à mão. A garantia de cada produto
+            (3 anos, 1 ano da teca ou os dois) se escolhe no cartão dos produtos.</div>
         </div>
 
         <div class="card so-te" style="margin-top:14px">
@@ -3193,6 +3233,333 @@ const DM_CLAUSULAS = [
 ];
 const DM_DECL_CHEGADA = "O CLIENTE, ou pessoa por ele autorizada, declara que leu as condições da seção 5, esclareceu suas dúvidas com a equipe da EOOSIN, concorda com elas, confere como corretas as informações das seções 1 a 4 e recebe uma via deste Termo. A assinatura é feita antes da montagem dos Produtos.";
 const DM_DECL_ENCERRAMENTO = "As partes declaram que a vistoria final foi feita em conjunto e que a seção 7 corresponde ao que foi constatado no momento da retirada dos Produtos. Esta declaração não impede a comunicação de dano não aparente, na forma da cláusula 5.3, nem implica renúncia a direitos previstos no Código de Defesa do Consumidor.";
+// termo de garantia de mobiliário externo: do PDF (Word); cláusulas como as do termo de demonstração
+const GT_INTRO = "Este termo identifica os produtos adquiridos, os prazos e as condições da garantia contratual oferecida pela EOOSIN e os cuidados de uso e conservação de cada material. A garantia contratual complementa a garantia legal prevista no Código de Defesa do Consumidor, que se mantém integralmente.";
+const GT_DECL_LOCAL = "O cliente declara que as informações acima são verdadeiras. A EOOSIN orientou o uso dos produtos para esse local (cláusulas 2 e 3 e Guia de Conservação).";
+const GT_NOTA_PRODUTOS = "Em produtos que combinam teca com outros materiais, os componentes de teca têm garantia contratual de 1 ano e os demais componentes, de 3 anos (cláusula 1.3). Os prazos contam da data de entrega.";
+const GT_CLAUSULAS = [
+ [
+  "CLÁUSULA 1 · DO OBJETO E DOS PRAZOS",
+  [
+   [
+    "1.1",
+    "A EOOSIN garante os produtos da seção 3 contra <b>defeitos de fabricação e de materiais</b>, nos prazos e condições deste termo."
+   ],
+   [
+    "1.2",
+    "A garantia contratual é de <b>3 (três) anos</b> para os produtos em geral e de <b>1 (um) ano</b> para os produtos de teca, contados da data de entrega registrada no Termo de Entrega e Recebimento."
+   ],
+   [
+    "1.3",
+    "Em produtos que combinam teca com outros materiais, como estrutura de alumínio com braços ou tampo de teca, os componentes de teca têm garantia contratual de 1 ano e os demais componentes, de 3 anos."
+   ],
+   [
+    "1.4",
+    "Considera-se defeito de fabricação a falha originada na produção ou nos materiais que compromete o uso, a segurança ou a durabilidade do produto em condições normais, como ruptura de solda ou de estrutura, descascamento da pintura sem causa externa, costura que se desfaz e falha de ferragem."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 2 · DA GARANTIA LEGAL",
+  [
+   [
+    "2.1",
+    "A garantia contratual é <b>complementar à garantia legal</b> (Código de Defesa do Consumidor, art. 50). A garantia legal é de 90 dias para vícios aparentes, contados da entrega, e de 90 dias para vícios ocultos, contados do momento em que o defeito ficar evidenciado (art. 26)."
+   ],
+   [
+    "2.2",
+    "As condições e exclusões deste termo aplicam-se à garantia contratual e não reduzem os direitos do consumidor previstos em lei."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 3 · DAS CARACTERÍSTICAS NATURAIS DOS MATERIAIS",
+  [
+   [
+    "3.1",
+    "As características abaixo são próprias dos materiais de mobiliário externo, foram informadas ao cliente neste termo e <b>não constituem defeito</b>:"
+   ],
+   [
+    "a)",
+    "<b>teca:</b> mudança gradual da cor para o tom acinzentado (pátina) com sol e chuva; microfissuras e pequenas rachaduras superficiais no sentido dos veios; pequenas frestas e movimentação causadas pela variação de umidade e temperatura; liberação de óleos e taninos nas primeiras chuvas, que pode manchar pisos claros; variação de cor, veios e nós entre peças;"
+   ],
+   [
+    "b)",
+    "<b>alumínio e aço pintados:</b> depósitos de sal e pontos de oxidação superficial em ambiente litorâneo sem a limpeza indicada; pequenas variações de tonalidade da pintura entre lotes;"
+   ],
+   [
+    "c)",
+    "<b>aço inoxidável:</b> manchas superficiais de oxidação em ambiente marinho, removíveis com limpeza;"
+   ],
+   [
+    "d)",
+    "<b>cordas, fibras sintéticas e tecidos externos:</b> desbotamento gradual pela exposição ao sol; pequenas variações de tensão das tramas; formação de bolinhas por atrito;"
+   ],
+   [
+    "e)",
+    "<b>espumas e enchimentos:</b> acomodação natural e perda gradual de altura e firmeza com o uso; ondulações do tecido de revestimento;"
+   ],
+   [
+    "f)",
+    "<b>pedras naturais, cerâmicas e vidros:</b> variações de cor, veios e textura; porosidade; manchas por absorção de líquidos não removidos de imediato."
+   ],
+   [
+    "3.2",
+    "Quando o cliente entender que alguma dessas alterações ocorreu de forma prematura ou fora do padrão do material, a EOOSIN fará a análise técnica da cláusula 7."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 4 · DAS SITUAÇÕES NÃO COBERTAS PELA GARANTIA CONTRATUAL",
+  [
+   [
+    "4.1",
+    "A garantia contratual não cobre danos causados por:"
+   ],
+   [
+    "a)",
+    "uso diferente da finalidade do produto, como subir, sentar em braços ou encostos, usar como escada ou apoio de carga, ou exceder a capacidade indicada na ficha técnica;"
+   ],
+   [
+    "b)",
+    "impactos, quedas, cortes, arranhões e queimaduras, inclusive por churrasqueiras, lareiras, velas e cigarros;"
+   ],
+   [
+    "c)",
+    "contato com produtos químicos, como cloro e água de piscina não enxaguada, protetor solar, repelente, bebidas, produtos de limpeza abrasivos, solventes e lavadoras de alta pressão;"
+   ],
+   [
+    "d)",
+    "falta da limpeza e da manutenção indicadas no Guia de Conservação, especialmente em ambiente litorâneo;"
+   ],
+   [
+    "e)",
+    "eventos externos, como vendavais, granizo, enchentes, queda de árvores ou objetos, raios e incêndios;"
+   ],
+   [
+    "f)",
+    "animais, como arranhões, mordidas e urina;"
+   ],
+   [
+    "g)",
+    "montagem, desmontagem, transporte, mudança, reparos ou alterações feitos por terceiros não autorizados pela EOOSIN, inclusive pintura, lixamento, verniz ou troca de peças;"
+   ],
+   [
+    "h)",
+    "armazenamento inadequado, como capas plásticas que não deixam o ar circular, locais sem ventilação ou contato com solo e água parada;"
+   ],
+   [
+    "i)",
+    "almofadas e estofados mantidos encharcados ou guardados úmidos, com mofo ou manchas de umidade, salvo especificação expressa do produto;"
+   ],
+   [
+    "j)",
+    "uso em local ou condição diferente do informado na seção 2, como produto indicado para área coberta deixado ao tempo ou levado para a beira-mar;"
+   ],
+   [
+    "k)",
+    "desgaste natural de itens de uso, como sapatas, ponteiras, niveladores, capas e elásticos;"
+   ],
+   [
+    "l)",
+    "quebra ou lascamento de vidros, pedras e cerâmicas após a entrega."
+   ],
+   [
+    "4.2",
+    "As situações acima afastam a garantia contratual quando estiverem relacionadas ao problema reclamado. Elas não afastam a cobertura de defeitos sem relação com essas situações."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 5 · DAS CONDIÇÕES PARA MANTER A GARANTIA",
+  [
+   [
+    "5.1",
+    "Para manter a garantia contratual, o cliente deve:"
+   ],
+   [
+    "a)",
+    "usar os produtos conforme sua finalidade, a ficha técnica e o local informado na seção 2;"
+   ],
+   [
+    "b)",
+    "seguir a limpeza e a manutenção do Guia de Conservação e do manual do fabricante;"
+   ],
+   [
+    "c)",
+    "guardar este termo e o comprovante de compra;"
+   ],
+   [
+    "d)",
+    "informar à EOOSIN qualquer mudança do local de uso ou do endereço dos produtos."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 6 · DO ACIONAMENTO DA GARANTIA",
+  [
+   [
+    "6.1",
+    "O cliente aciona a garantia pelo WhatsApp (21) 99173-0940 ou no showroom, informando o número do pedido, o produto, a descrição do problema e, sempre que possível, fotos e vídeos. A EOOSIN registra o atendimento com número de protocolo e responde em até 5 (cinco) dias úteis."
+   ],
+   [
+    "6.2",
+    "O cliente deve comunicar o problema assim que o perceber e interromper o uso do produto se houver risco à segurança. O agravamento causado pelo uso do produto após a constatação do problema não é coberto pela garantia contratual."
+   ],
+   [
+    "6.3",
+    "A EOOSIN é o canal de atendimento do cliente, inclusive quando a solução depender do fabricante."
+   ],
+   [
+    "6.4",
+    "A garantia contratual cobre os problemas comunicados à EOOSIN dentro do seu prazo. Após o fim do prazo, permanece apenas a garantia legal da cláusula 2."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 7 · DA ANÁLISE TÉCNICA",
+  [
+   [
+    "7.1",
+    "A EOOSIN analisa a ocorrência por fotos e vídeos, por visita técnica ou pelo recolhimento do produto, e o cliente deve permitir o acesso ao local."
+   ],
+   [
+    "7.2",
+    "A visita técnica é feita na cidade do Rio de Janeiro e nos municípios atendidos pela EOOSIN na entrega. Se os produtos tiverem sido levados para outro local, os custos adicionais de deslocamento da garantia contratual são informados ao cliente e pagos por ele antes da visita."
+   ],
+   [
+    "7.3",
+    "Se a análise concluir que o problema não está coberto (cláusulas 3 e 4), o cliente pagará a <b>taxa de visita técnica</b>, informada e aceita por ele antes do agendamento. O reparo, se desejado, depende de orçamento e de autorização prévia do cliente."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 8 · DA SOLUÇÃO",
+  [
+   [
+    "8.1",
+    "Constatado o defeito coberto, a EOOSIN <b>repara ou substitui a peça ou o componente defeituoso</b>, a seu critério técnico, sem custo de peças, mão de obra e transporte. A substituição alcança o componente com defeito, e não necessariamente o conjunto inteiro."
+   ],
+   [
+    "8.2",
+    "O prazo para a solução é de 30 (trinta) dias, ressalvado o prazo ajustado em separado no quadro da cláusula 9 para peças importadas."
+   ],
+   [
+    "8.3",
+    "Se o modelo, o acabamento ou o tecido não estiverem mais disponíveis, a substituição será feita por item equivalente, de qualidade igual ou superior, com possível variação de tonalidade."
+   ],
+   [
+    "8.4",
+    "O reparo ou a substituição não reinicia o prazo da garantia contratual. O componente reparado ou substituído fica coberto pelo prazo restante da garantia, sem prejuízo da garantia legal sobre o serviço."
+   ],
+   [
+    "8.5",
+    "As peças substituídas passam a ser de propriedade da EOOSIN."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 9 · DAS PEÇAS IMPORTADAS",
+  [
+   [
+    "9.1",
+    "O prazo para a solução que dependa de peça importada está no quadro destacado ao final desta seção, ajustado em separado com o cliente."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 10 · DO USO COMERCIAL",
+  [
+   [
+    "10.1",
+    "Para uso comercial ou de hospitalidade, como hotéis, restaurantes, clubes e condomínios, os prazos e condições poderão ser definidos em proposta comercial específica. Na falta dela, aplica-se este termo, e o desgaste decorrente do uso intenso não é considerado defeito."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 11 · DA PROTEÇÃO DE DADOS",
+  [
+   [
+    "11.1",
+    "Os dados pessoais e as imagens enviados pelo cliente são usados apenas para o atendimento da garantia, o cumprimento de obrigações legais e a defesa de direitos da EOOSIN (Lei nº 13.709/2018, art. 7º, II, V e VI), e podem ser compartilhados com o fabricante quando necessário à análise."
+   ]
+  ]
+ ],
+ [
+  "CLÁUSULA 12 · DAS DISPOSIÇÕES GERAIS",
+  [
+   [
+    "12.1",
+    "Integram este termo a ficha técnica e o manual do fabricante de cada produto e o Guia de Conservação da seção 5. Em caso de divergência, prevalece a orientação mais específica para o produto."
+   ],
+   [
+    "12.2",
+    "A garantia contratual acompanha os produtos no endereço de entrega. Em caso de venda dos produtos, o prazo restante pode ser transferido ao novo proprietário mediante comunicação à EOOSIN."
+   ],
+   [
+    "12.3",
+    "A tolerância com o descumprimento de qualquer condição não significa renúncia nem alteração deste termo. Se alguma cláusula for considerada inválida, as demais continuam válidas."
+   ],
+   [
+    "12.4",
+    "Este termo poderá ser assinado fisicamente ou eletronicamente, inclusive com certificado digital ICP-Brasil ou plataforma de assinatura eletrônica, nos termos da MP nº 2.200-2/2001, com a mesma validade da assinatura física."
+   ],
+   [
+    "12.5",
+    "Fica eleito o foro da Comarca da Capital do Estado do Rio de Janeiro, ressalvado o direito do cliente de propor ação no foro do seu domicílio (Código de Defesa do Consumidor, art. 101, I)."
+   ]
+  ]
+ ]
+];
+const GT_QUADRO9_TITULO = "CLÁUSULA 9 · PRAZO PARA SOLUÇÃO COM PEÇAS IMPORTADAS · AJUSTE EM SEPARADO";
+const GT_QUADRO9 = "Os produtos da EOOSIN são importados, e algumas peças e componentes dependem de envio pelo fabricante no exterior. Por isso, as partes ajustam, nos termos do art. 18, §2º, do Código de Defesa do Consumidor, que o prazo para a solução de defeito que dependa de peça ou componente importado será de <b>até 120 (cento e vinte) dias</b>, contados do registro do atendimento. A EOOSIN informará ao cliente a previsão de chegada da peça. Quando a solução não depender de peça importada, vale o prazo de 30 dias da cláusula 8.2.";
+const GT_ACEITE = "Li e concordo com o prazo de até 120 dias para peças importadas.";
+const GT_GUIA = [
+ [
+  "Alumínio e aço pintados",
+  "Pano macio ou esponja não abrasiva com água e sabão neutro. Enxaguar com água doce e secar. Retirar o sal acumulado.",
+  "Mensal. Frente-mar ou perto de piscina: semanal.",
+  "Palha de aço, abrasivos, solventes, cloro puro e lavadora de alta pressão."
+ ],
+ [
+  "Aço inoxidável",
+  "Água e sabão neutro, enxágue com água doce e secagem. Manchas de oxidação superficial saem com produto próprio para inox.",
+  "Mensal. Frente-mar: semanal.",
+  "Palha de aço comum, produtos com cloro e contato com peças de ferro."
+ ],
+ [
+  "Teca",
+  "Escova macia com água e sabão neutro, no sentido dos veios. Para manter o tom original, aplicar óleo ou protetor próprio para teca; sem tratamento, a madeira ganha tom acinzentado.",
+  "Limpeza mensal. Óleo ou protetor a cada 3 a 6 meses, se desejado.",
+  "Lavadora de alta pressão, verniz comum, objetos quentes e água parada sob os pés."
+ ],
+ [
+  "Cordas e fibras sintéticas",
+  "Escova macia com água e sabão neutro. Enxaguar e deixar secar ao ar.",
+  "Mensal.",
+  "Objetos cortantes, abrasivos e solventes."
+ ],
+ [
+  "Tecidos externos e almofadas",
+  "Remover a sujeira com escova macia. Limpar manchas com água e sabão neutro. Deixar as almofadas secarem em pé, com ventilação, antes de guardar ou cobrir. Tecido que repele água não torna a almofada impermeável.",
+  "Quinzenal. Após chuva, secar antes de usar.",
+  "Máquina de lavar e secar, alvejante, deixar as almofadas na chuva ou encharcadas."
+ ],
+ [
+  "Pedras, cerâmicas e vidros",
+  "Pano macio com água e sabão neutro. Remover líquidos, gorduras e protetor solar de imediato. Usar descansos sob objetos quentes.",
+  "Após o uso.",
+  "Ácidos, abrasivos, impactos e objetos quentes direto sobre o tampo."
+ ],
+ [
+  "Cuidados gerais",
+  "Usar capas respiráveis e mantê-las secas. Em longos períodos sem uso, guardar as almofadas em local seco e ventilado. Não arrastar os móveis. Conferir e reapertar os parafusos periodicamente.",
+  "Conforme o uso e o clima.",
+  "Capas plásticas fechadas, contato direto com o solo e acúmulo de água."
+ ]
+];
+const GT_ORIENTACOES = "As orientações acima são gerais. O manual do fabricante e a ficha técnica de cada produto têm prioridade quando forem mais específicos (cláusula 12.1).";
+const GT_DECLARACAO = "O CLIENTE, ou pessoa por ele autorizada, declara que recebeu este termo, leu as condições da garantia, recebeu as orientações de uso e conservação e que as informações da seção 2 sobre o local de uso são verdadeiras. A assinatura não implica renúncia a direitos previstos no Código de Defesa do Consumidor.";
 // </textos-dos-contratos>
 const CT_EMPRESA = {
   nome: 'EOOSIN HOME WORLD', resto: 'MÓVEIS E DECORAÇÕES LTDA.', cnpj: '65.465.363/0001-48',
@@ -3213,7 +3580,7 @@ const dataExtenso = iso => {
   return m ? `${+m[3]} de ${MESES[+m[2]-1]} de ${m[1]}` : null;
 };
 
-function cabecalhoCt(c, titulo, rotulo='PEDIDO', legenda=''){
+function cabecalhoCt(c, titulo, rotulo='PEDIDO', legenda='', sub='DE MÓVEIS E OBJETOS DE DECORAÇÃO'){
   return `
   <div class="dh">
     <div class="brand">
@@ -3232,7 +3599,7 @@ function cabecalhoCt(c, titulo, rotulo='PEDIDO', legenda=''){
       <div class="num">${legenda ? `<small>${legenda}</small>` : ''}Nº ${c.num ? esc(c.num) : '<i class="ln-in" style="width:20mm"></i>'}</div>
     </div>
   </div>
-  <div class="ct-tit"><h2>${titulo}<small>DE MÓVEIS E OBJETOS DE DECORAÇÃO</small></h2></div>`;
+  <div class="ct-tit"><h2>${titulo}<small>${sub}</small></h2></div>`;
 }
 const rodapeCt = () => `
   <div class="grow"></div>
@@ -3420,8 +3787,10 @@ const CT_CAMPOS = {num:'kNum', data:'kData', nf:'kNF', cliente:'kCliente', doc:'
   transpCnpj:'kTranspCnpj', placa:'kPlaca', motorista:'kMotorista', motDoc:'kMotDoc', dataHora:'kDataHora',
   email:'kEmail', rg:'kRG', condo:'kCondo', resp:'kResp', dataVisita:'kDataVisita', pedidaEm:'kPedidaEm',
   pedidoPor:'kPedidoPor', arq:'kArq', chegada:'kChegada', retirada:'kRetirada', respEoosin:'kRespEoosin',
-  dmPlaca:'kDmPlaca', equipe:'kEquipe', custos:'kCustos', custosValor:'kCustosValor', custosDesc:'kCustosDesc'};
-const CT_ITEM = ['produto','modelo','qtd','cor','valor','volumes','vref'];
+  dmPlaca:'kDmPlaca', equipe:'kEquipe', custos:'kCustos', custosValor:'kCustosValor', custosDesc:'kCustosDesc',
+  gTermo:'kgTermo', gEntrega:'kgEntrega', gExpo:'kgExpo', gMar:'kgMar', gPiscina:'kgPiscina', gUso:'kgUso',
+  gNome:'kgNome', gCargo:'kgCargo'};
+const CT_ITEM = ['produto','modelo','qtd','cor','valor','volumes','vref','marca','material','gar'];
 
 function lerContrato(){
   const c = {};
@@ -3466,8 +3835,8 @@ function desenharContrato(){
   atualizarSaldo();
   const c = lerContrato();
   $('#empty')?.remove();
-  if(ctAtual === 'dm'){                         // folhas montadas por docDM, sem encaixe
-    const r = docDM(c);
+  if(ctAtual === 'dm' || ctAtual === 'gt'){     // folhas montadas uma a uma (folhasPaginadas), sem encaixe
+    const r = (ctAtual === 'dm' ? docDM : docGT)(c);
     scaler.innerHTML = r.html;
     LAYOUT_CT = {paginas:r.paginas, escala:1};
   } else {
@@ -3496,6 +3865,10 @@ function linhaItemCt(v = {}, auto = false){
       <div class="campo so-cv"><label>Valor (R$)</label>${inp('valor','inputmode="decimal"')}</div>
       <div class="campo so-te"><label>Volumes</label>${inp('volumes','inputmode="numeric"')}</div>
       <div class="campo so-dm"><label>Valor ref./un.</label>${inp('vref','inputmode="decimal"')}</div>
+      <div class="campo so-gt"><label>Marca</label>${inp('marca')}</div>
+      <div class="campo so-gt m"><label>Material</label>${inp('material')}</div>
+      <div class="campo so-gt m"><label>Garantia</label><select data-k="gar">${[['','—'],['3','3 anos'],['1','1 ano (teca)'],
+        ['ambos','3 anos + teca']].map(([val, rot]) => `<option value="${val}"${(v.gar||'') === val ? ' selected' : ''}>${rot}</option>`).join('')}</select></div>
     </div>`;
   d.querySelector('.x').onclick = () => {
     d.remove();
@@ -3566,7 +3939,7 @@ async function carregarContratoPDF(f){
                       `vieram do PDF: confira antes de imprimir.`);
   const faltam = [['Nº do pedido',D.numero],['Nota fiscal',D.nfe],['Data',D.data],['Cliente',cl.razao],['CPF/CNPJ',cl.doc],
                   ['Endereço',cl.endereco],['Telefone',cl.fone],['Vendedor(a)',D.vendedor],['Valor total',total],
-                  ...(ctAtual==='dm' ? [['E-mail',cl.email]] : [])]
+                  ...(ctAtual==='dm' || ctAtual==='gt' ? [['E-mail',cl.email]] : [])]
                  .filter(([,x]) => x==null || x==='').map(([r]) => r);
   if(faltam.length) out += msg('warn', `<b>Não vieram no PDF</b> (ficam para preencher):<br>${faltam.join(' · ')}`);
   if(desp.seguro || desp.outras)
@@ -3697,9 +4070,10 @@ function blocosDM(c){
   return B;
 }
 
-/* mede cada bloco fora da tela e distribui em folhas; devolve o HTML e o nº de folhas */
-function docDM(c){
-  const PX = 96/25.4, blocos = blocosDM(c);
+/* mede cada bloco fora da tela e distribui em folhas; devolve o HTML e o nº de folhas.
+   Serve o termo de demonstração (docDM) e o de garantia (docGT). */
+function folhasPaginadas(blocos, cabCont, tipo, c){
+  const PX = 96/25.4;
   const med = document.createElement('div');
   med.className = 'doc dm';
   med.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
@@ -3712,8 +4086,6 @@ function docDM(c){
     alvo.innerHTML = `<div class="dm-b">${html}</div>`;
     return alvo.firstElementChild.getBoundingClientRect().height;
   };
-  const num = c.num ? esc(c.num) : '____________';
-  const cabCont = `<div class="dm-cab"><span>EOOSIN HOME WORLD · ${DM_TITULO}</span><span>TERMO DO ORÇAMENTO Nº ${num}</span></div>`;
   const hCab = alt(cabCont, false);
   /* altura útil: 297mm − 7mm de margem no topo − 17mm do rodapé (que fica a 5mm do pé) */
   const CAP = (297 - 7 - 17) * PX;
@@ -3770,14 +4142,126 @@ function docDM(c){
         `<div class="dm-col">${p.cols.dir.map(x => bloco(x.html)).join('')}</div></div>`
       : bloco(p.html)).join('')}
     <div class="dm-pe"><span>${IC.pin}${esc(DM_RODAPE)}</span><span>Rubrica do cliente ________ · ${k+1}/${N}</span></div></div>`).join('');
-  return {paginas:N, html:`<div class="doc dm paginado" data-tipo="TERMO DE DEMONSTRAÇÃO" data-num="${esc(c.num)}" `+
+  return {paginas:N, html:`<div class="doc dm paginado" data-tipo="${tipo}" data-num="${esc(c.num)}" `+
                           `data-cliente="${esc(c.cliente)}">${html}</div>`};
+}
+function docDM(c){
+  const num = c.num ? esc(c.num) : '____________';
+  return folhasPaginadas(blocosDM(c),
+    `<div class="dm-cab"><span>EOOSIN HOME WORLD · ${DM_TITULO}</span><span>TERMO DO ORÇAMENTO Nº ${num}</span></div>`,
+    'TERMO DE DEMONSTRAÇÃO', c);
+}
+
+/* ---------- termo de garantia de mobiliário externo (13/11/2026) ----------
+   Texto do PDF "Termo de Garantia - EOOSIN" (feito no Word; é a versão oficial — o .docx
+   "EOOSIN_Modelo_Garantia_Mobiliario_Externo" é um modelo anterior e não entra), refeito no
+   visual do termo de demonstração e montado pelas mesmas folhasPaginadas. Decidido com o Lucas:
+   número "GARANTIA REFERENTE AO PEDIDO Nº" (o do pedido, não um número próprio), a garantia de
+   cada produto escolhida no painel, e a ordem 1 a 4, quadro da cl. 9, 5 guia, 6 declaração. */
+const GT_TITULO = 'TERMO DE GARANTIA DE MOBILIÁRIO EXTERNO';
+const GT_EXPO = ['Área externa coberta', 'Área externa descoberta', 'Varanda fechada / área interna'];
+const GT_MAR  = ['Até 1 km (frente-mar)', 'De 1 a 5 km', 'Mais de 5 km'];
+const GT_USO  = ['Residencial', 'Comercial / hospitalidade'];
+const GT_COLS = '<colgroup><col style="width:6%"><col><col style="width:17%"><col style="width:16%">'+
+                '<col style="width:7%"><col style="width:21%"></colgroup>';
+const GT_COLCAB = '<tr class="col"><th class="c">ITEM</th><th>PRODUTO / MODELO</th><th>MARCA / REFERÊNCIA</th>'+
+                  '<th>MATERIAL PRINCIPAL</th><th class="c">QTD.</th><th>GARANTIA CONTRATUAL</th></tr>';
+const GT_GCOLS = '<colgroup><col style="width:17%"><col style="width:37%"><col style="width:21%"><col style="width:25%"></colgroup>';
+const GT_GCAB = '<tr class="col"><th>MATERIAL</th><th>LIMPEZA E MANUTENÇÃO</th><th>FREQUÊNCIA</th><th>EVITAR</th></tr>';
+const CK0 = CK.replace('ck"', 'ck" style="margin-left:0"');           // quadradinho no começo da linha
+const ck0 = marcado => marcado ? CK_ON.replace('ck on"', 'ck on" style="margin-left:0"') : CK0;
+
+function blocosGT(c){
+  const B = [], sp = ' &nbsp;&nbsp; ';
+  const par   = (a, b, x, y) => `<tr><td class="k">${a}</td><td class="v">${b}</td><td class="k">${x}</td><td class="v">${y}</td></tr>`;
+  const larga = (a, b, cls='') => `<tr><td class="k">${a}</td><td class="v ${cls}" colspan="3">${b}</td></tr>`;
+  const tab   = (titulo, linhas) => `<table class="ct-tab"><colgroup><col style="width:19%"><col style="width:31%">`+
+    `<col style="width:19%"><col style="width:31%"></colgroup><thead><tr class="junto"><th colspan="4">${titulo}</th></tr></thead>`+
+    `<tbody>${linhas}</tbody></table>`;
+  const opcoes = (lista, escolhido) => lista.map((o, k) => `${k ? sp : ''}${(k ? ck : ck0)(escolhido === o)}${o}`).join('');
+  const cartao = (rotulo, n, unid) => `<div class="gt-card"><em>${rotulo}</em><div class="lin"><b class="num">${n}<small>${unid}</small></b>`+
+    `<span>Contra defeitos de fabricação e de materiais, contados da data de entrega.</span></div></div>`;
+
+  B.push({html: cabecalhoCt(c, 'TERMO DE GARANTIA', 'GARANTIA', 'REFERENTE AO PEDIDO', 'DE MOBILIÁRIO EXTERNO') +
+    `<p class="ct-p just" style="margin-bottom:2.4mm">${esc(GT_INTRO)}</p>` +
+    `<div class="gt-cards">${cartao('PRODUTOS EM GERAL', '3', 'ANOS')}${cartao('PRODUTOS E COMPONENTES EM TECA', '1', 'ANO')}</div>`});
+
+  B.push({html: tab('1. DADOS DO CLIENTE E DA COMPRA',
+    par('Cliente', cel(c.cliente), 'CPF/CNPJ', cel(c.doc)) +
+    par('Telefone', cel(c.fone), 'E-mail', cel(c.email)) +
+    larga('Endereço de entrega', cel(c.end)) +
+    par('Contrato/Pedido nº', cel(c.num), 'Nota Fiscal nº', cel(c.nf)) +
+    par('Termo de Entrega nº', cel(c.gTermo), 'Data de entrega', cel(c.gEntrega)))});
+
+  B.push({html: tab('2. LOCAL E USO INFORMADOS PELO CLIENTE',
+    larga('Exposição', opcoes(GT_EXPO, c.gExpo), 'opc') +
+    larga('Distância do mar', opcoes(GT_MAR, c.gMar), 'opc') +
+    larga('Próximo a piscina', `${opcoes(['Sim', 'Não'], c.gPiscina)}${sp}${sp}<span class="gt-rot">Tipo de uso:</span> `+
+          `${opcoes(GT_USO, c.gUso)}`, 'opc')) +
+    `<p class="dm-nota">${esc(GT_DECL_LOCAL)}</p>`});
+
+  /* produtos: uma tabela por linha, como no termo de demonstração (podem virar a folha uma a uma) */
+  const nLin = Math.max(6, c.itens.length);
+  for(let k = 0; k < nLin; k++){
+    const i = c.itens[k] || {}, g = i.gar || '';
+    const ref = [i.marca, i.modelo].filter(Boolean).join(' / ');
+    const linha = `<tr><td class="c">${String(k+1).padStart(2,'0')}</td><td class="v">${cel(i.produto)}</td>`+
+                  `<td class="v">${cel(ref)}</td><td class="v">${cel(i.material)}</td><td class="c v">${cel(i.qtd)}</td>`+
+                  `<td class="v opc">${ck0(g === '3' || g === 'ambos')}3 anos ${ck(g === '1' || g === 'ambos')}1 ano (teca)</td></tr>`;
+    const cab = k ? '' : `<tr class="junto"><th colspan="6">3. PRODUTOS E PRAZOS DE GARANTIA CONTRATUAL</th></tr>${GT_COLCAB}`;
+    B.push({html: `<table class="ct-tab dm-lin">${GT_COLS}${cab ? `<thead>${cab}</thead>` : ''}<tbody>${linha}</tbody></table>`,
+            cab: k ? `<table class="ct-tab dm-lin">${GT_COLS}<thead>${GT_COLCAB}</thead></table>` : ''});
+  }
+  B.push({html: `<p class="dm-nota" style="margin-top:1.4mm">${esc(GT_NOTA_PRODUTOS)}</p>`});
+
+  // 4. condições: folha nova, faixa, cláusulas em duas colunas e, embaixo, o quadro da cláusula 9
+  B.push({folhaNova:true, html: '<table class="ct-tab"><thead><tr><th>4. CONDIÇÕES DA GARANTIA</th></tr></thead></table>'});
+  const item = ([n, h]) => `<p class="dm-it just${/^[a-z]\)$/.test(n) ? ' sub' : ''}"><span class="n">${esc(n)}</span> ${h}</p>`;
+  GT_CLAUSULAS.forEach(([titulo, itens]) => {
+    B.push({col:true, html: `<p class="dm-cl">${esc(titulo)}</p>` + item(itens[0])});
+    itens.slice(1).forEach(it => B.push({col:true, html: item(it)}));
+  });
+  B.push({html: `<div class="gt-box"><p class="dm-cl" style="padding-top:0">${esc(GT_QUADRO9_TITULO)}</p>`+
+    `<p class="dm-it just">${GT_QUADRO9}</p>`+
+    `<div class="gt-aceite"><span>${esc(GT_ACEITE)}</span><span>Assinatura do cliente: <i class="ln-in" style="width:58mm"></i></span></div></div>`});
+
+  // 5. guia de conservação: uma tabela por linha, com o cabeçalho repetido se virar a folha
+  GT_GUIA.forEach(([mat, limp, freq, evitar], k) => {
+    const linha = `<tr><td class="gt-mat">${esc(mat)}</td><td>${esc(limp)}</td><td>${esc(freq)}</td><td>${esc(evitar)}</td></tr>`;
+    const cab = k ? '' : `<tr class="junto"><th colspan="4">5. GUIA DE CONSERVAÇÃO</th></tr>${GT_GCAB}`;
+    B.push({html: `<table class="ct-tab dm-lin gt-guia">${GT_GCOLS}${cab ? `<thead>${cab}</thead>` : ''}<tbody>${linha}</tbody></table>`,
+            cab: k ? `<table class="ct-tab dm-lin gt-guia">${GT_GCOLS}<thead>${GT_GCAB}</thead></table>` : ''});
+  });
+  B.push({html: `<p class="dm-nota" style="margin-top:1.4mm">${esc(GT_ORIENTACOES)}</p>`});
+
+  const cliente = assinaturaDM('CLIENTE OU PESSOA AUTORIZADA', '',
+    `<p class="ct-p" style="margin-top:1.6mm">${CK0}Próprio cliente ${CK}Pessoa autorizada</p>`);
+  const eoosin = `<div>
+        <h5>EOOSIN HOME WORLD</h5>
+        <div class="f"><span class="k">Assinatura:</span><span class="v"><i class="ln-in" style="width:100%;height:8mm"></i></span></div>
+        <div class="f"><span class="k">Nome legível:</span><span class="v">${lin(c.gNome, '100%')}</span></div>
+        <div class="f"><span class="k">Cargo:</span><span class="v">${lin(c.gCargo, '100%')}</span></div>
+      </div>`;
+  B.push({html: tituloSec('6. DECLARAÇÃO DE RECEBIMENTO') + `<p class="ct-p just">${esc(GT_DECLARACAO)}</p>` +
+    `<p class="ct-p">Documentos entregues: ${CK}Ficha técnica ${CK}Manual do fabricante ${CK}Guia de Conservação (seção 5)</p>` +
+    `<p class="ct-p" style="padding-top:1mm">Local e data: ${lin('', '48mm')}, ${lin('', '7mm')}/${lin('', '7mm')}/${lin('', '12mm')}`+
+    `${sp}${sp}Forma de assinatura: ${CK}Física ${CK}Eletrônica</p>` +
+    `<div class="ct-ass">${cliente}${eoosin}</div>` +
+    `<div class="ct-vias">1ª via: EOOSIN &nbsp;·&nbsp; 2ª via: Cliente</div>`});
+  return B;
+}
+
+function docGT(c){
+  const num = c.num ? esc(c.num) : '____________';
+  return folhasPaginadas(blocosGT(c),
+    `<div class="dm-cab"><span>EOOSIN HOME WORLD · ${GT_TITULO}</span><span>GARANTIA REF. AO PEDIDO Nº ${num}</span></div>`,
+    'TERMO DE GARANTIA', c);
 }
 
 function nomeContrato(){
   const cli = ($('#kCliente').value||'').trim().split(/\s+/).slice(0,3)
               .map(w=>w.replace(/[^\wÀ-ÿ]/g,'')).filter(Boolean).join('_');
-  return `${({cv:'Contrato', te:'Termo_Entrega', dm:'Termo_Demonstracao'})[ctAtual]}_${cli||'CLIENTE'}.pdf`;
+  return `${({cv:'Contrato', te:'Termo_Entrega', dm:'Termo_Demonstracao', gt:'Termo_Garantia'})[ctAtual]}_${cli||'CLIENTE'}.pdf`;
 }
 
 ligarDrop($('#drop3'), $('#file3'), carregarContratoPDF);
